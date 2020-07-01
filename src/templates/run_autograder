@@ -2,8 +2,8 @@
 
 # Set up autograder files
 
-cp /autograder/submission/calculator.py /autograder/source/calculator.py
+# cp /autograder/submission/calculator.py /autograder/source/calculator.py
 
-cd /autograder/source || exit
+# cd /autograder/source || exit
 
-python run_tests.py
+python3 /autograder/source/run_tests.py
