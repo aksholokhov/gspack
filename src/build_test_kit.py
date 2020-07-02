@@ -5,9 +5,10 @@ import types
 import shutil
 from zipfile import ZipFile
 import pickle
+import click
 
 DIST_DIR = Path("dist")
-TEMPLATES_DIR = Path("templates")
+TEMPLATES_DIR = Path("src/templates")
 REQUIREMENTS_FILE = "requirements.txt"
 RUN_AUTOGRADER_FILE = "run_autograder"
 SETUP_FILE = "setup.sh"
@@ -30,17 +31,17 @@ def validate_solution(solution_path):
     try:
         exec(solution_code, solution_module.__dict__)
     except Exception as e:
-        print("Error happened while executing the solution file. Logged into")
+        print("Error happened while executing the amath301_hw0 file. Logged into")
         return False, None, None
     if not hasattr(solution_module, 'test_suite'):
-        print("No test_suite variable defined in the solution file.")
+        print("No test_suite variable defined in the amath301_hw0 file.")
         return False, None, None
     test_suite = solution_module.test_suite
     if type(test_suite) is not dict:
         print(f"test_suite is defined as {type(test_suite)} but it should be dict.")
     for k, v in test_suite.items():
         if not hasattr(solution_module, v["variable_name"]):
-            print(f"{k}: variable {v['variable_name']} is set to be checked but it's not defined in the solution file")
+            print(f"{k}: variable {v['variable_name']} is set to be checked but it's not defined in the amath301_hw0 file")
         else:
             print(f"{k}: ok")
             test_suite[k]["value"] = solution_module.__getattribute__(v["variable_name"])
@@ -82,16 +83,18 @@ def create_solution_archive(solution_path, test_suite, extra_files):
     return True
 
 
-# TODO: option for output directory
-# @click.command(
-#     help="Genreates archive for gradescope autograder"
-# )
-# @click.option(
-#     '--solution_path',
-#     default="solution.py",
-#     type=str,
-#     help="specify path to the solution"
-# )
+@click.command(
+    help="Genreates archive for gradescope autograder"
+)
+@click.option(
+    '--solution_path',
+    default="amath301_hw0.py",
+    type=str,
+    help="specify path to the amath301_hw0"
+)
+def create_autograder_from_console(**kwargs):
+    create_autograder(**kwargs)
+
 def create_autograder(solution_path):
     solution_path = Path(solution_path).absolute()
     is_valid, test_suite, extra_files = validate_solution(solution_path)
@@ -100,4 +103,4 @@ def create_autograder(solution_path):
 
 
 if __name__ == "__main__":
-    create_autograder(solution_path="solution/hw0_solution.py")
+    create_autograder(solution_path="../examples/amath301_hw0/hw0_solution.py")
