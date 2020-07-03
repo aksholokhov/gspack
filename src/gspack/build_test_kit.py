@@ -107,15 +107,10 @@ def create_solution_archive(solution_path, test_suite, extra_files):
 )
 @click.option(
     '--solution_path',
-    default="python101.py",
     type=str,
     help="specify path to the python101"
 )
 def create_autograder_from_console(**kwargs):
-    # here = os.path.dirname(__file__)
-    # path_t = os.path.join(here, "templates", "setup.sh")
-    # print(path_t)
-    # print(os.path.exists(path_t))
     create_autograder(**kwargs)
 
 
