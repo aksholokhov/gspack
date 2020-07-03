@@ -36,11 +36,11 @@ if __name__ == '__main__':
         else:
             continue
     if len(student_solution_path) == 0:
-        results["output"] = "No amath301_hw0 files found."
+        results["output"] = "No python101 files found."
     elif len(student_solution_path) > 1:
-        results["output"] = ("Don't know which one is the amath301_hw0 file: \n ->" +
+        results["output"] = ("Don't know which one is the python101 file: \n ->" +
                              "\n ->".join(student_solution_path) +
-                             "\n You need to submit only one amath301_hw0 file."
+                             "\n You need to submit only one python101 file."
                              )
     else:
         student_solution_path = student_solution_path[0]
@@ -64,7 +64,7 @@ if __name__ == '__main__':
                 }
                 results["tests"].append(test_result)
                 if not hasattr(solution_module, test["variable_name"]):
-                    test_result["output"] = f"Variable {test['variable_name']} is not defined in your amath301_hw0."
+                    test_result["output"] = f"Variable {test['variable_name']} is not defined in your python101."
                     continue
                 answer = solution_module.__getattribute__(test["variable_name"])
                 if type(answer) != type(true_value):

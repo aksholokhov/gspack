@@ -49,17 +49,17 @@ def validate_solution(solution_path):
     try:
         exec(solution_code, solution_module.__dict__)
     except Exception as e:
-        print("Error happened while executing the amath301_hw0 file. Logged into")
+        print("Error happened while executing the python101 file. Logged into")
         return False, None, None
     if not hasattr(solution_module, 'test_suite'):
-        print("No test_suite variable defined in the amath301_hw0 file.")
+        print("No test_suite variable defined in the python101 file.")
         return False, None, None
     test_suite = solution_module.test_suite
     if type(test_suite) is not dict:
         print(f"test_suite is defined as {type(test_suite)} but it should be dict.")
     for k, v in test_suite.items():
         if not hasattr(solution_module, v["variable_name"]):
-            print(f"{k}: variable {v['variable_name']} is set to be checked but it's not defined in the amath301_hw0 file")
+            print(f"{k}: variable {v['variable_name']} is set to be checked but it's not defined in the python101 file")
         else:
             print(f"{k}: ok")
             test_suite[k]["value"] = solution_module.__getattribute__(v["variable_name"])
@@ -107,9 +107,9 @@ def create_solution_archive(solution_path, test_suite, extra_files):
 )
 @click.option(
     '--solution_path',
-    default="amath301_hw0.py",
+    default="python101.py",
     type=str,
-    help="specify path to the amath301_hw0"
+    help="specify path to the python101"
 )
 def create_autograder_from_console(**kwargs):
     # here = os.path.dirname(__file__)
@@ -127,4 +127,4 @@ def create_autograder(solution_path):
 
 
 if __name__ == "__main__":
-    create_autograder(solution_path="../../examples/amath301_hw0/hw0_solution.py")
+    create_autograder(solution_path="../../examples/python101/hw0_solution.py")
