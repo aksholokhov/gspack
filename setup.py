@@ -9,7 +9,7 @@ if __name__ == "__main__":
     src_dir = base_dir / 'src'
 
     about = {}
-    with (src_dir / "__about__.py").open() as f:
+    with (src_dir / "gspack" / "__about__.py").open() as f:
         exec(f.read(), about)
 
     with (base_dir / "README.md").open() as f:
@@ -41,6 +41,12 @@ if __name__ == "__main__":
 
         package_dir={'': 'src'},
         packages=find_packages(where='src'),
+
+        package_data = {
+            "gspack": ["src/gspack/templates/run_autograder",
+                       "src/gspack/templates/run_tests.py",
+                       "src/gspack/templates/setup.sh"]
+        },
         include_package_data=True,
 
         install_requires=install_requirements,
@@ -52,7 +58,7 @@ if __name__ == "__main__":
         },
         entry_points='''
             [console_scripts]
-            gspack=build_test_kit:create_autograder_from_console
+            gspack=gspack:create_autograder_from_console
         ''',
 
         zip_safe=False,
