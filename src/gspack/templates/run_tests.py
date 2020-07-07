@@ -1,10 +1,7 @@
-import unittest
-from gradescope_utils.autograder_utils.json_test_runner import JSONTestRunner
 from pathlib import Path
 import pickle
 import types
 import os
-import sys, traceback
 import numpy as np
 import json
 
@@ -55,13 +52,16 @@ if __name__ == '__main__':
             except Exception as e:
                 results["score"] = 0
                 results["output"] = f"Execution failed: \n {str(e)}"
-            for test_name, test in test_suite.items():
+            for i, (test_name, test) in enumerate(test_suite.items()):
                 true_value = test["value"]
                 test_result = {
-                    "name": test_name,
+                    "name": f"{i+1}. {test_name}",
                     "score": 0,
                     "visibility": "visible"
                 }
+                if test.get("description", None) is not None:
+                    test_result["name"] += f": {test['description']}"
+
                 results["tests"].append(test_result)
                 if not hasattr(solution_module, test["variable_name"]):
                     test_result["output"] = f"Variable {test['variable_name']} is not defined in your python101."

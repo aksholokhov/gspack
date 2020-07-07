@@ -42,7 +42,9 @@ def generate_requirements(filepath, output_path):
 def validate_solution(solution_path):
     if not os.path.exists(solution_path):
         raise FileNotFoundError(f"The file {os.path.abspath(solution_path)} does not exists")
+    print("Found the solution file:")
     solution_code = open(solution_path, 'r').read()
+    print(f"-> {os.path.abspath(solution_path)}")
     solution_module_name = os.path.basename(solution_path)
     solution_module = types.ModuleType(solution_module_name)
     solution_module.__file__ = os.path.abspath(solution_path)
@@ -57,15 +59,22 @@ def validate_solution(solution_path):
     test_suite = solution_module.test_suite
     if type(test_suite) is not dict:
         print(f"test_suite is defined as {type(test_suite)} but it should be dict.")
+    print("Found the test suite configuration:")
     for k, v in test_suite.items():
         if not hasattr(solution_module, v["variable_name"]):
             print(f"{k}: variable {v['variable_name']} is set to be checked but it's not defined in the python101 file")
         else:
-            print(f"{k}: ok")
+            print(f"-> {k}: ok")
             test_suite[k]["value"] = solution_module.__getattribute__(v["variable_name"])
 
     if hasattr(solution_module, 'extra_files'):
         extra_files = solution_module.extra_files
+        print("Find extra files list:")
+        for f in extra_files:
+            if os.path.exists(solution_path.parent / f):
+                print(f"-> {f}: ok")
+            else:
+                print(f"-> {f}: can't find {solution_path.parent / f}")
     else:
         extra_files = []
 
@@ -96,6 +105,7 @@ def create_solution_archive(solution_path, test_suite, extra_files):
         for f in os.listdir(solution_dir / DIST_DIR):
             zip_archive.write(solution_dir / DIST_DIR / f, arcname=f)
         zip_archive.close()
+        print(f"Archive created successfully: \n-> {solution_dir / AUTOGRADER_ZIP}")
     finally:
         if os.path.exists(solution_dir / DIST_DIR):
             shutil.rmtree(solution_dir / DIST_DIR)
@@ -106,16 +116,16 @@ def create_solution_archive(solution_path, test_suite, extra_files):
     help="Genreates archive for gradescope autograder"
 )
 @click.option(
-    '--solution_path',
+    '--solution',
     type=str,
-    help="specify path to the python101"
+    help="path to the solution file"
 )
 def create_autograder_from_console(**kwargs):
     create_autograder(**kwargs)
 
 
-def create_autograder(solution_path):
-    solution_path = Path(solution_path).absolute()
+def create_autograder(solution):
+    solution_path = Path(solution).absolute()
     is_valid, test_suite, extra_files = validate_solution(solution_path)
     if is_valid:
         success = create_solution_archive(solution_path, test_suite, extra_files)
