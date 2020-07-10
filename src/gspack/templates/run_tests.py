@@ -43,6 +43,7 @@ if __name__ == '__main__':
         student_solution_path = student_solution_path[0]
 
         if language == "PYTHON":
+            # TODO: copy necessary data files
             solution_code = open(student_solution_path, 'r').read()
             solution_module_name = os.path.basename(student_solution_path)
             solution_module = types.ModuleType(solution_module_name)
@@ -59,6 +60,8 @@ if __name__ == '__main__':
                     "score": 0,
                     "visibility": "visible"
                 }
+                # TODO: hint
+
                 if test.get("description", None) is not None:
                     test_result["name"] += f": {test['description']}"
 

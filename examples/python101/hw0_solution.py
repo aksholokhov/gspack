@@ -12,7 +12,8 @@ test_suite = {
     "Addition": {
         "variable_name": "A1",
         "description": "Evaluating x + y - z",
-        "score": 1
+        "score": 1,
+        "hint": "Check your signs"
     },
     "Power": {
         "variable_name": "A2",
