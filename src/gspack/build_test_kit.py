@@ -49,12 +49,16 @@ def validate_solution(solution_path):
     solution_module = types.ModuleType(solution_module_name)
     solution_module.__file__ = os.path.abspath(solution_path)
     try:
+        mydir = os.getcwd()
+        os.chdir(solution_path.parent)
         exec(solution_code, solution_module.__dict__)
+        os.chdir(mydir)
     except Exception as e:
-        print("Error happened while executing the python101 file. Logged into")
+        print("Error happened while executing the solution file:")
+        print(e)
         return False, None, None
     if not hasattr(solution_module, 'test_suite'):
-        print("No test_suite variable defined in the python101 file.")
+        print("No test_suite variable defined in the solution file.")
         return False, None, None
     test_suite = solution_module.test_suite
     if type(test_suite) is not dict:
@@ -62,7 +66,7 @@ def validate_solution(solution_path):
     print("Found the test suite configuration:")
     for k, v in test_suite.items():
         if not hasattr(solution_module, v["variable_name"]):
-            print(f"{k}: variable {v['variable_name']} is set to be checked but it's not defined in the python101 file")
+            print(f"{k}: variable {v['variable_name']} is set to be checked but it's not defined after the solution finishes its execution.")
         else:
             print(f"-> {k}: ok")
             test_suite[k]["value"] = solution_module.__getattribute__(v["variable_name"])
@@ -91,7 +95,7 @@ def create_solution_archive(solution_path, test_suite, extra_files):
         generate_requirements(solution_dir, output_path=solution_dir / DIST_DIR / REQUIREMENTS_FILE)
         shutil.copyfile(program_dir / TEMPLATES_DIR / SETUP_FILE, solution_dir / DIST_DIR / SETUP_FILE)
         shutil.copyfile(program_dir / TEMPLATES_DIR / RUN_AUTOGRADER_FILE, solution_dir / DIST_DIR / RUN_AUTOGRADER_FILE)
-        pickle.dump(test_suite, open(solution_dir / DIST_DIR / TEST_SUITE_DUMP, "wb"))
+        pickle.dump((test_suite, extra_files), open(solution_dir / DIST_DIR / TEST_SUITE_DUMP, "wb"))
 
         for extra_file in extra_files:
             try:
