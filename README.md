@@ -6,7 +6,7 @@ Programming Assignment Packager for GradeScope Auto Grader.
 
 **TL;DR:** *If you just want to make GradeScope checking correctness of certain values in students coding solutions, and
  you don't have time to learn how to create GradeScope Autograder archives -- this tool is for you. 
- However, if you want to write actual test suites, which test speed/correctness of students functions on arbitrary input -- gradescope-tools is what you need*.
+ However, if you want to write actual test suites, which test speed/correctness of students functions on arbitrary input -- [gradescope-utils](https://github.com/gradescope/gradescope-utils) is what you need*.
 
 This tool
  addresses situations when the class you teach has a certain programming component, but the main 
@@ -77,9 +77,9 @@ extra_files = ["matrix.dat"]
 ```
 This will create three tests "Addition", "Power", and "Arrange", each, being done correctly, will give to a student 
 1, 1, and 3 points respectively, with the total of 5 points. In the last part we also define custom relative and absolute
-tolerances (sometimes it's necessary for taking round-off and numerical errors into account properly). 
+tolerances: sometimes it's necessary for taking round-off and numerical errors into account properly. 
 
-Now we launch the `gspack`: in terminal, type
+Now we launch the `gspack`: in the terminal, type
 ```shell script
 $ gspack --solution path/to/the/hw0_solution.py
 ```
@@ -100,7 +100,7 @@ The `autograder.zip` will be in the same directory to your `hw0_solution.py`. Th
 scripts, extra files listed in `extra_files`, and instructions for GradeScope AutoGrader, so now you can create a new GradeScope programming
 assignment and to upload this archive when prompted. 
 
-Next, suppose a student wrote the following solution for this assignment: 
+Next, suppose a student writes the following solution for this assignment: 
 ```python
 import numpy as np
 import pickle
@@ -148,7 +148,7 @@ For each test, the grading system will go through the following checklist:
 4. Does the answer contain any NaNs?
 5. If everything above is okay, does the answer pass the tolerance requirements?
 
-For the later one, the `numpy.allclose` function is used:
+For the later one, the [`numpy.allclose`](https://numpy.org/doc/stable/reference/generated/numpy.allclose.html) function is used:
 ```shell script
 passed = np.allclose(student_answer, solution_answer, rtol=rtol, atol=atol)
 ```
