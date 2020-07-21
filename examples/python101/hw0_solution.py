@@ -1,5 +1,4 @@
 import numpy as np
-import pickle
 
 x = 10
 y = -2
@@ -8,10 +7,11 @@ z = np.pi
 A1 = x + y - z
 A2 = x**3
 
-with open("matrix.dat", "rb") as f:
-    matrix = pickle.load(f)
+with open("matrix.csv", "r") as f:
+    matrix = np.loadtxt(f, delimiter=",")
 
-A3 = np.linalg.svd(matrix)[0][:2].T
+U, S, V = np.linalg.svd(matrix, full_matrices=True)
+A3 = U[:, :2]
 
 test_suite = {
     "Addition": {
@@ -34,4 +34,4 @@ test_suite = {
     }
 }
 
-extra_files = ["matrix.dat"]
+extra_files = ["matrix.csv"]
