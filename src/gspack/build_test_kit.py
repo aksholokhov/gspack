@@ -63,15 +63,16 @@ def validate_solution(solution_path):
         print("No test_suite variable defined in the solution file.")
         return False, None, None
     test_suite = solution_module.test_suite
-    if type(test_suite) is not dict:
-        print(f"test_suite is defined as {type(test_suite)} but it should be dict.")
+    if type(test_suite) is not list:
+        print(f"test_suite is defined as {type(test_suite)} but it should be list.")
     print("Found the test suite configuration:")
-    for k, v in test_suite.items():
-        if not hasattr(solution_module, v["variable_name"]):
-            print(f"{k}: variable {v['variable_name']} is set to be checked but it's not defined after the solution finishes its execution.")
+    for test in test_suite:
+        if not hasattr(solution_module, test['variable_name']):
+            print(f"{test['test_name']}: variable {test['variable_name']} is set to be checked"
+                  f" but it's not defined after the solution finishes its execution.")
         else:
-            print(f"-> {k}: ok")
-            test_suite[k]["value"] = solution_module.__getattribute__(v["variable_name"])
+            print(f"-> {test['test_name']}: ok")
+            test["value"] = solution_module.__getattribute__(test["variable_name"])
 
     if hasattr(solution_module, 'extra_files'):
         extra_files = solution_module.extra_files
@@ -138,4 +139,4 @@ def create_autograder(solution):
 
 
 if __name__ == "__main__":
-    create_autograder(solution_path="../../examples/python101/hw0_solution.py")
+    create_autograder(solution="../../examples/python101/hw0_solution.py")
