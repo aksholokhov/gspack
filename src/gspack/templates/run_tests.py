@@ -6,7 +6,8 @@ import numpy as np
 import json
 import shutil
 
-HOME_DIR = Path("/autograder")
+HOME_DIR = Path("/Users/aksh/Storage/repos/gspack/examples/python101/autograder")
+# HOME_DIR = Path("/autograder")
 SOURCE_DIR = HOME_DIR / "source"
 SUBMISSION_DIR = HOME_DIR / "submission"
 TEST_SUITE_DUMP = "test_suite.dump"
@@ -46,11 +47,10 @@ def execute(student_solution_path, language="python"):
             student_answers[test["test_name"]] = solution_module.__dict__.get(test["variable_name"], None)
 
     elif language == "MATLAB":
-        # TODO: implement matlab grader
         with open(student_solution_path, 'r') as f:
             with open(SUBMISSION_DIR / 'solution.m', 'w') as f2:
                 prefix = f"function [{', '.join([test['variable_name'] for test in test_suite])}] = solution() \n"
-                postfix = "end"
+                postfix = "\nend"
                 f2.write(prefix)
                 f2.write(f.read())
                 f2.write(postfix)
@@ -58,12 +58,14 @@ def execute(student_solution_path, language="python"):
             import matlab.engine
             eng = matlab.engine.start_matlab()
             # wrap up the script as a function
-            output = eng.solution()
+            output = eng.solution(nargout=len(test_suite))
             for v, test in zip(output, test_suite):
                 student_answers[test["test_name"]] = matlab2python(v)
         except Exception as e:
             successfully_executed = False
             student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
+        finally:
+            os.remove(SUBMISSION_DIR / 'solution.m')
 
     else:
         results["output"] = f"Unsupported language: {language}"
@@ -94,6 +96,7 @@ if __name__ == '__main__':
     if len(student_solution_path) == 0:
         results["output"] = "No student solution files found."
     elif len(student_solution_path) > 1:
+        # TODO: fix the posix-path bug in join
         results["output"] = ("Don't know which one is the right solution file: \n ->" +
                              "\n ->".join(student_solution_path) +
                              "\n You need to submit only one solution file."
@@ -110,7 +113,6 @@ if __name__ == '__main__':
                 json.dump(results, f, indent=4)
             exit(0)
 
-        # TODO: Fix so it uses student solution dict instead of solution_module
         for i, test in enumerate(test_suite):
             true_answer = test["value"]
             test_result = {
@@ -129,6 +131,7 @@ if __name__ == '__main__':
                 continue
             answer = student_answers[test["test_name"]]
 
+            # TODO: fix bug with numeric types
             if type(answer) != type(true_answer):
                 test_result[
                     "output"] = f"Wrong answer type: the type of your variable {test['variable_name']} is {type(answer)}, " \
