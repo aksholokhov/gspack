@@ -19,6 +19,7 @@ if __name__ == "__main__":
         'pipreqs',
         'subprocess32',
         'click',
+        'numpy'
     ]
 
     test_requirements = [
