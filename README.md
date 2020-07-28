@@ -36,7 +36,6 @@ Suppose you are writing a solution for a Homework 0 in Python 101 where students
 
 ```python
 import numpy as np
-import pickle
 
 x = 10
 y = -2
@@ -45,35 +44,40 @@ z = np.pi
 A1 = x + y - z
 A2 = x**3
 
-with open("matrix.dat", "rb") as f:
-    matrix = pickle.load(f)
+with open("matrix.csv", "r") as f:
+    matrix = np.loadtxt(f, delimiter=",")
 
-A3 = np.linalg.svd(matrix)[0][:2].T
+U, S, V = np.linalg.svd(matrix, full_matrices=True)
+A3 = U[:, :2]
 ```
 Now you want to make the rubric based on variables `A1`, `A2` and `A3`. All you need to do is to define the following 
 dictionary and list in your solution file:
 ```python
-test_suite = {
-    "Addition": {
+test_suite = [
+    {
+        "test_name": "Addition",
         "variable_name": "A1",
         "description": "Evaluating x + y - z",
         "score": 1,
-        "hint": "Check your signs"
     },
-    "Power": {
+    {
+        "test_name": "Power",
         "variable_name": "A2",
         "description": "Evaluating x^3",
+        "hint_tolerance": "Check power.",
         "score": 1
     },
-    "Arrange": {
+    {
+        "test_name": "Arrange",
         "variable_name": "A3",
+        "hint_wrong_size": "Check transposition",
         "rtol": 1e-5,
         "atol": 1e-2,
         "score": 3
     }
-}
+]
 
-extra_files = ["matrix.dat"]
+extra_files = ["matrix.csv"]
 ```
 This will create three tests "Addition", "Power", and "Arrange", each, being done correctly, will give to a student 
 1, 1, and 3 points respectively, with the total of 5 points. In the last part we also define custom relative and absolute
@@ -92,7 +96,7 @@ Found the test suite configuration:
 -> Power: ok
 -> Arrange: ok
 Find extra files list:
--> matrix.dat: ok
+-> matrix.csv: ok
 Archive created successfully:
 -> /from/root/path/to/the/autograder.zip
 ```
@@ -103,7 +107,6 @@ assignment and to upload this archive when prompted.
 Next, suppose a student writes the following solution for this assignment: 
 ```python
 import numpy as np
-import pickle
 
 x = 10
 y = -2
@@ -112,10 +115,11 @@ z = np.pi
 A1 = x + y - z
 A2 = x**4
 
-with open("matrix.dat", "rb") as f:
-    matrix = pickle.load(f)
+with open("matrix.csv", "r") as f:
+    matrix = np.loadtxt(f, delimiter=",")
 
-A3 = np.linalg.svd(matrix)[0][:2]
+U, S, V = np.linalg.svd(matrix, full_matrices=True)
+A3 = U[:, :2].T
 ```
 
 The first part is correct, the second part is wrong, and the third part is okay
@@ -129,16 +133,21 @@ When this solution is submitted, the student should see something like this:
 Formally, the `test_suite` instruction has the following syntax:
 
 ```python
-test_suite = {
-    "<test_name>": {                                # Required string. <test_name> is whatever string you want.
-        "variable_name": "<variable_name>",         # Required string. Substitute the name of the variable to check.
-        "score": <score>,                           # Optional int, default = 1. How many points to give for this part. 
-        "description": "<description>",             # Optional string. Description of the test, appears in the test title.
-        "hint": "<hint>",                           # Optional string. Appears when a student does this part wrong.
-        "rtol": <rtol>,                             # Optional float, default = 1e-8, relative tolerance.
-        "atol": <atol>,                             # Optional float, default = 1e-5, absolute tolerance.
+test_suite = [
+    # for each test:
+    {   "test_name": "<test_name>",                 # **Required** string. <test_name> is whatever string you want.
+        "variable_name": "<variable_name>",         # **Required** string. Substitute the name of the variable to check.
+        "score": <score>,                           # _Optional_ int, default = 1. How many points to give for this part. 
+        "description": "<description>",             # _Optional_ string. Description of the test, appears in the test title.
+        "rtol": <rtol>,                             # _Optional_ float, default = 1e-8, relative tolerance.
+        "atol": <atol>,                             # _Optional_ float, default = 1e-5, absolute tolerance.
+        "hint_not_defined": "<sting>",              # _Optional_ string, appears if <variable_name> is not defined in the student's solution.
+        "hint_wrong_type": "<string>",              # _Optional_ string, appears if <variable_name> is defined, but its type is wrong
+        "hint_wrong_size": "<string>",              # _Optional_ string, appears if the <variable_name> has wrong shape (for matrices)
+        "hint_nans": "<string>",                    # _Optional_ string, appears if the <variable_name> contains NaNs
+        "hint_tolerance": "<string>"                # _Optional_ string, appears if the <variable_name> does not pass the tolerance requirements.
     }
-}
+]
 ```
 
 For each test, the grading system will go through the following checklist:
@@ -152,6 +161,11 @@ For the later one, the [`numpy.allclose`](https://numpy.org/doc/stable/reference
 ```shell script
 passed = np.allclose(student_answer, solution_answer, rtol=rtol, atol=atol)
 ```
+Its internal formula is:
+```
+absolute(a - b) <= (atol + rtol * absolute(b))
+```
+and it's applied **element-wise**. 
 
 If the test fails, GradeScope will show the student a message which clarifies what went wrong.
 
@@ -163,4 +177,4 @@ If the test fails, GradeScope will show the student a message which clarifies wh
 extra_files = ["test_data.csv", "train_data.csv"]
 ``` 
 `gspack` expects them to be in the same directory as the solution script. It will add them to the `autograder.csv` 
-and will place them accordingly when grading students submissions. 
+and will place them accordingly when grading students submissions. The kind of files or their extension do not matter.
