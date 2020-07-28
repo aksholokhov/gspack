@@ -39,8 +39,6 @@ def generate_requirements(filepath, output_path):
     return process.communicate()
 
 
-# TODO: fix for new structure of the rubric
-
 def validate_solution(solution_path):
     if not os.path.exists(solution_path):
         raise FileNotFoundError(f"The file {os.path.abspath(solution_path)} does not exists")

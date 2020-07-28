@@ -6,8 +6,8 @@ import numpy as np
 import json
 import shutil
 
-HOME_DIR = Path("/Users/aksh/Storage/repos/gspack/examples/python101/autograder")
-# HOME_DIR = Path("/autograder")
+#HOME_DIR = Path("/Users/aksh/Storage/repos/gspack/examples/python101/autograder")
+HOME_DIR = Path("/autograder")
 SOURCE_DIR = HOME_DIR / "source"
 SUBMISSION_DIR = HOME_DIR / "submission"
 TEST_SUITE_DUMP = "test_suite.dump"
@@ -17,8 +17,18 @@ RESULTS_JSON = "results.json"
 
 def matlab2python(a):
     import matlab.engine
-    import numpy as np
-    if type(a) == matlab.double:
+    matlab_array_types = (matlab.double,
+                          matlab.single,
+                          matlab.int8,
+                          matlab.int16,
+                          matlab.int32,
+                          matlab.int64,
+                          matlab.uint8,
+                          matlab.uint16,
+                          matlab.uint32,
+                          matlab.uint64
+                          )
+    if type(a) in matlab_array_types:
         return np.array(a)
     elif type(a) == int or type(a) == float:
         return a
@@ -98,7 +108,7 @@ if __name__ == '__main__':
     elif len(student_solution_path) > 1:
         # TODO: fix the posix-path bug in join
         results["output"] = ("Don't know which one is the right solution file: \n ->" +
-                             "\n ->".join(student_solution_path) +
+                             "\n ->".join([str(path) for path in student_solution_path]) +
                              "\n You need to submit only one solution file."
                              )
     else:
@@ -127,33 +137,37 @@ if __name__ == '__main__':
             results["tests"].append(test_result)
             if student_answers[test["test_name"]] is None:
                 test_result["output"] = (f"Variable {test['variable_name']} is not defined in your solution file." +
-                                         "" if test.get("hint", None) is None else f" Hint: {test['hint']}")
+                                         "" if test.get("hint_not_defined",
+                                                        None) is None else f"\nHint: {test['hint_not_defined']}")
                 continue
             answer = student_answers[test["test_name"]]
 
-            # TODO: fix bug with numeric types
-            if type(answer) != type(true_answer):
+            if not ((type(answer) == type(true_answer)) or (
+                    type(answer) in (float, int) and (type(true_answer) in (float, int)))):
                 test_result[
                     "output"] = f"Wrong answer type: the type of your variable {test['variable_name']} is {type(answer)}, " \
                                 f"but it should be {type(true_answer)}"
-                test_result["output"] += "" if test.get("hint", None) is None else f" Hint: {test['hint']}"
+                test_result["output"] += "" if test.get("hint_wrong_type",
+                                                        None) is None else f"\nHint: {test['hint_wrong_type']}"
 
                 continue
             if type(answer) is np.ndarray and answer.shape != true_answer.shape:
                 test_result[
                     "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {answer.shape}, " \
                                 f"but it should be {true_answer.shape}"
-                test_result["output"] += "" if test.get("hint", None) is None else f" Hint: {test['hint']}"
+                test_result["output"] += "" if test.get("hint_wrong_size",
+                                                        None) is None else f"\nHint: {test['hint_wrong_size']}"
                 continue
             if np.isnan(answer).any():
                 test_result["output"] = f"Your variable {test['variable_name']} contains NaNs."
-                test_result["output"] += "" if test.get("hint", None) is None else f" Hint: {test['hint']}"
+                test_result["output"] += "" if test.get("hint_nans", None) is None else f"\nHint: {test['hint_nans']}"
                 continue
             rtol = test.get("rtol", None) or 1e-5
             atol = test.get("atol", None) or 1e-8
             if not np.allclose(answer, true_answer, rtol=rtol, atol=atol):
                 test_result["output"] = f"Your answer is not within tolerance from the right answer."
-                test_result["output"] += "" if test.get("hint", None) is None else f" Hint: {test['hint']}"
+                test_result["output"] += "" if test.get("hint_tolerance",
+                                                        None) is None else f"\nHint: {test['hint_tolerance']}"
                 continue
             test_result["output"] = "Correct."
             test_result["score"] = test["score"]
