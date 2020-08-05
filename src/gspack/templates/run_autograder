@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # Set up autograder files
-
-# cp /autograder/submission/calculator.py /autograder/source/calculator.py
-
-# cd /autograder/source || exit
-
+echo "Opening tunnel"
+ssh -4 -f -N -M -S ~/.ssh/socket -L 27000:mlc06302021.lic.uw.edu:27000 -L 27010:mlc06302021.lic.uw.edu:27010 gradescopetunnel@doppio.amath.washington.edu
+echo "Run grading"
 python3 /autograder/source/run_tests.py
+echo "Closing tunnel"
+ssh -S ~/.ssh/socket -O exit gradescopetunnel@doppio.amath.washington.edu

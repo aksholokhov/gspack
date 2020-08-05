@@ -1,3 +1,5 @@
+import matlab.engine
+
 from pathlib import Path
 import pickle
 import types
@@ -5,6 +7,8 @@ import os
 import numpy as np
 import json
 import shutil
+
+import subprocess
 
 #HOME_DIR = Path("/Users/aksh/Storage/repos/gspack/examples/python101/autograder")
 HOME_DIR = Path("/autograder")
@@ -16,7 +20,6 @@ RESULTS_JSON = "results.json"
 
 
 def matlab2python(a):
-    import matlab.engine
     matlab_array_types = (matlab.double,
                           matlab.single,
                           matlab.int8,
@@ -65,12 +68,18 @@ def execute(student_solution_path, language="python"):
                 f2.write(f.read())
                 f2.write(postfix)
         try:
-            import matlab.engine
+            # process = subprocess.Popen(f"{SOURCE_DIR}/open_ssh_tunnel.sh".split(),
+            #                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # output = process.communicate()
             eng = matlab.engine.start_matlab()
             # wrap up the script as a function
             output = eng.solution(nargout=len(test_suite))
             for v, test in zip(output, test_suite):
                 student_answers[test["test_name"]] = matlab2python(v)
+            # process = subprocess.Popen(f"{SOURCE_DIR}/close_ssh_tunnel.sh".split(),
+            #                            stdout=subprocess.PIPE,
+            #                            stderr=subprocess.STDOUT)
+            # output = process.communicate()
         except Exception as e:
             successfully_executed = False
             student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
@@ -106,7 +115,6 @@ if __name__ == '__main__':
     if len(student_solution_path) == 0:
         results["output"] = "No student solution files found."
     elif len(student_solution_path) > 1:
-        # TODO: fix the posix-path bug in join
         results["output"] = ("Don't know which one is the right solution file: \n ->" +
                              "\n ->".join([str(path) for path in student_solution_path]) +
                              "\n You need to submit only one solution file."

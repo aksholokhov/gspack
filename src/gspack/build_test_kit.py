@@ -32,6 +32,13 @@ SETUP_FILE = "setup.sh"
 RUN_TESTS_FILE = "run_tests.py"
 TEST_SUITE_DUMP = "test_suite.dump"
 AUTOGRADER_ZIP = "autograder.zip"
+# MATLAB STUFF
+MATLAB_INSTALL_FILE = "matlab_setup.sh"
+OPEN_TUNNEL_FILE = "open_ssh_tunnel.sh"
+CLOSE_TUNNEL_FILE = "close_ssh_tunnel.sh"
+RSA_KEY = "id_rsa"
+KNOWN_HOSTS_FILE = "known_hosts"
+MATLAB_NETWORK_LIC_FILE = "network.lic"
 
 
 def generate_requirements(filepath, output_path):
@@ -96,6 +103,13 @@ def create_solution_archive(solution_path, test_suite, extra_files):
         generate_requirements(solution_dir, output_path=solution_dir / DIST_DIR / REQUIREMENTS_FILE)
         shutil.copyfile(program_dir / TEMPLATES_DIR / SETUP_FILE, solution_dir / DIST_DIR / SETUP_FILE)
         shutil.copyfile(program_dir / TEMPLATES_DIR / RUN_AUTOGRADER_FILE, solution_dir / DIST_DIR / RUN_AUTOGRADER_FILE)
+        # TODO: Fix it
+        matlab = True
+        if matlab:
+            for file in (MATLAB_INSTALL_FILE, OPEN_TUNNEL_FILE, CLOSE_TUNNEL_FILE, RSA_KEY, KNOWN_HOSTS_FILE, MATLAB_NETWORK_LIC_FILE):
+                shutil.copyfile(program_dir / TEMPLATES_DIR / file,
+                                solution_dir / DIST_DIR / file)
+
         pickle.dump((test_suite, extra_files), open(solution_dir / DIST_DIR / TEST_SUITE_DUMP, "wb"))
 
         for extra_file in extra_files:
