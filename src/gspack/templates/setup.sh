@@ -8,7 +8,7 @@ pip3 install subprocess32
 pip3 install -r /autograder/source/requirements.txt
 
 # Set up MATLAB, if needed
-chmod +x /autograder/source/matlab_setup.sh
-/autograder/source/matlab_setup.sh
+# chmod +x /autograder/source/matlab_setup.sh
+# /autograder/source/matlab_setup.sh
 
-echo "Main setup.sh completed"
+# echo "Main setup.sh completed"

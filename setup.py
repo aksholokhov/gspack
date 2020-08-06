@@ -47,12 +47,6 @@ if __name__ == "__main__":
             "gspack": ["src/gspack/templates/run_autograder",
                        "src/gspack/templates/run_tests.py",
                        "src/gspack/templates/setup.sh",
-                       "src/gspack/templates/open_ssh_tunnel.sh",
-                       "src/gspack/templates/close_ssh_tunnel.sh",
-                       "src/gspack/templates/matlab_setup.sh",
-                       "src/gspack/templates/network.lic",
-                       "src/gspack/templates/id_rsa",
-                       "src/gspack/templates/known_hosts",
                        ]
         },
         include_package_data=True,
