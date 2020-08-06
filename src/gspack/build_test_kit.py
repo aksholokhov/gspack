@@ -24,6 +24,8 @@ from zipfile import ZipFile
 import pickle
 import click
 
+
+
 DIST_DIR = Path("dist")
 TEMPLATES_DIR = Path("templates")
 REQUIREMENTS_FILE = "requirements.txt"
@@ -33,6 +35,7 @@ RUN_TESTS_FILE = "run_tests.py"
 TEST_SUITE_DUMP = "test_suite.dump"
 AUTOGRADER_ZIP = "autograder.zip"
 # MATLAB STUFF
+# TODO: find better, secure way of working with MATLAB credentials
 MATLAB_INSTALL_FILE = "matlab_setup.sh"
 OPEN_TUNNEL_FILE = "open_ssh_tunnel.sh"
 CLOSE_TUNNEL_FILE = "close_ssh_tunnel.sh"
@@ -130,10 +133,11 @@ def create_solution_archive(solution_path, test_suite, extra_files):
             shutil.rmtree(solution_dir / DIST_DIR)
     return True
 
-
+# TODO: Add MATLAB support option
 @click.command(
     help="Genreates archive for gradescope autograder"
 )
+# TODO: move it to the default argument
 @click.option(
     '--solution',
     type=str,
@@ -143,6 +147,7 @@ def create_autograder_from_console(**kwargs):
     create_autograder(**kwargs)
 
 
+# TODO: make the success/fail output more descriptive
 def create_autograder(solution):
     solution_path = Path(solution).absolute()
     is_valid, test_suite, extra_files = validate_solution(solution_path)

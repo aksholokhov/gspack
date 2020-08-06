@@ -8,8 +8,6 @@ import numpy as np
 import json
 import shutil
 
-import subprocess
-
 #HOME_DIR = Path("/Users/aksh/Storage/repos/gspack/examples/python101/autograder")
 HOME_DIR = Path("/autograder")
 SOURCE_DIR = HOME_DIR / "source"
@@ -68,19 +66,14 @@ def execute(student_solution_path, language="python"):
                 f2.write(f.read())
                 f2.write(postfix)
         try:
-            # process = subprocess.Popen(f"{SOURCE_DIR}/open_ssh_tunnel.sh".split(),
-            #                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            # output = process.communicate()
             eng = matlab.engine.start_matlab()
             # wrap up the script as a function
             output = eng.solution(nargout=len(test_suite))
             for v, test in zip(output, test_suite):
                 student_answers[test["test_name"]] = matlab2python(v)
-            # process = subprocess.Popen(f"{SOURCE_DIR}/close_ssh_tunnel.sh".split(),
-            #                            stdout=subprocess.PIPE,
-            #                            stderr=subprocess.STDOUT)
-            # output = process.communicate()
+
         except Exception as e:
+            # TODO: differentiate between matlab fail and solution fail
             successfully_executed = False
             student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
         finally:
