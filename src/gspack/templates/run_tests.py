@@ -18,6 +18,8 @@ RESULTS_JSON = "results.json"
 
 
 def matlab2python(a):
+    # TODO: delete this
+    import matlab.engine
     matlab_array_types = (matlab.double,
                           matlab.single,
                           matlab.int8,
@@ -58,6 +60,7 @@ def execute(student_solution_path, language="python"):
             student_answers[test["test_name"]] = solution_module.__dict__.get(test["variable_name"], None)
 
     elif language == "MATLAB":
+        raise NotImplementedError("Matlab support has not been implemented yet")
         with open(student_solution_path, 'r') as f:
             with open(SUBMISSION_DIR / 'solution.m', 'w') as f2:
                 prefix = f"function [{', '.join([test['variable_name'] for test in test_suite])}] = solution() \n"
@@ -66,9 +69,9 @@ def execute(student_solution_path, language="python"):
                 f2.write(f.read())
                 f2.write(postfix)
         try:
-            eng = matlab.engine.start_matlab()
+            #eng = matlab.engine.start_matlab()
             # wrap up the script as a function
-            output = eng.solution(nargout=len(test_suite))
+            output = None #eng.solution(nargout=len(test_suite))
             for v, test in zip(output, test_suite):
                 student_answers[test["test_name"]] = matlab2python(v)
 
