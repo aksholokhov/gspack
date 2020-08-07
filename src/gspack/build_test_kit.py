@@ -107,7 +107,7 @@ def create_solution_archive(solution_path, test_suite, extra_files):
         shutil.copyfile(program_dir / TEMPLATES_DIR / SETUP_FILE, solution_dir / DIST_DIR / SETUP_FILE)
         shutil.copyfile(program_dir / TEMPLATES_DIR / RUN_AUTOGRADER_FILE, solution_dir / DIST_DIR / RUN_AUTOGRADER_FILE)
         # TODO: Fix it
-        matlab = True
+        matlab = False
         if matlab:
             for file in (MATLAB_INSTALL_FILE, OPEN_TUNNEL_FILE, CLOSE_TUNNEL_FILE, RSA_KEY, KNOWN_HOSTS_FILE, MATLAB_NETWORK_LIC_FILE):
                 shutil.copyfile(program_dir / TEMPLATES_DIR / file,
