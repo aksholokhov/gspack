@@ -69,6 +69,7 @@ def execute(student_solution_path, language="python"):
                 f2.write(f.read())
                 f2.write(postfix)
         try:
+            # TODO: uncomment this when matlab is working
             #eng = matlab.engine.start_matlab()
             # wrap up the script as a function
             output = None #eng.solution(nargout=len(test_suite))
