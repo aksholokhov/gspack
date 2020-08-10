@@ -23,8 +23,9 @@ import shutil
 from zipfile import ZipFile
 import pickle
 import click
+import json
 
-
+from gspack.__about__ import __author__, __email__
 
 DIST_DIR = Path("dist")
 TEMPLATES_DIR = Path("templates")
@@ -34,27 +35,34 @@ SETUP_FILE = "setup.sh"
 RUN_TESTS_FILE = "run_tests.py"
 TEST_SUITE_DUMP = "test_suite.dump"
 AUTOGRADER_ZIP = "autograder.zip"
-# MATLAB STUFF
-# TODO: find better, secure way of working with MATLAB credentials
+CONFIG_JSON = "config.json"
+AUTOGRADER_ARCHVE_FILES = [SETUP_FILE, RUN_TESTS_FILE, RUN_AUTOGRADER_FILE]
+
+# MATLAB stuff
 MATLAB_INSTALL_FILE = "matlab_setup.sh"
-OPEN_TUNNEL_FILE = "open_ssh_tunnel.sh"
-CLOSE_TUNNEL_FILE = "close_ssh_tunnel.sh"
 RSA_KEY = "id_rsa"
 KNOWN_HOSTS_FILE = "known_hosts"
 MATLAB_NETWORK_LIC_FILE = "network.lic"
+PROXY_SETTINGS = "proxy_settings.json"
+MATLAB_FILES = [MATLAB_INSTALL_FILE, RSA_KEY, KNOWN_HOSTS_FILE, MATLAB_NETWORK_LIC_FILE, PROXY_SETTINGS]
 
 
 def generate_requirements(filepath, output_path):
-    process = subprocess.Popen(f"pipreqs --savepath {output_path} {filepath}".split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(f"pipreqs --savepath {output_path} {filepath}".split(), stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT)
     return process.communicate()
 
 
-def validate_solution(solution_path):
+def generate_solution(solution_path):
+    # Reading the solution's file
     if not os.path.exists(solution_path):
-        raise FileNotFoundError(f"The file {os.path.abspath(solution_path)} does not exists")
+        print(f"The file {os.path.abspath(solution_path)} does not exists")
+        return False
     print("Found the solution file:")
     solution_code = open(solution_path, 'r').read()
     print(f"-> {os.path.abspath(solution_path)}")
+    # Setting up a new Python module in real-time, and executing the solution code in that module
+    # to get the variables values
     solution_module_name = os.path.basename(solution_path)
     solution_module = types.ModuleType(solution_module_name)
     solution_module.__file__ = os.path.abspath(solution_path)
@@ -66,74 +74,146 @@ def validate_solution(solution_path):
     except Exception as e:
         print("Error happened while executing the solution file:")
         print(e)
-        return False, None, None
+        return False
+
+    # Checking the correctness of the test suite
     if not hasattr(solution_module, 'test_suite'):
         print("No test_suite variable defined in the solution file.")
-        return False, None, None
+        return False
     test_suite = solution_module.test_suite
     if type(test_suite) is not list:
         print(f"test_suite is defined as {type(test_suite)} but it should be list.")
+        return False
     print("Found the test suite configuration:")
     for test in test_suite:
         if not hasattr(solution_module, test['variable_name']):
             print(f"{test['test_name']}: variable {test['variable_name']} is set to be checked"
                   f" but it's not defined after the solution finishes its execution.")
         else:
-            print(f"-> {test['test_name']}: ok")
+            print(f"-> {test['test_name']}: OK")
             test["value"] = solution_module.__getattribute__(test["variable_name"])
 
-    if hasattr(solution_module, 'extra_files'):
-        extra_files = solution_module.extra_files
-        print("Find extra files list:")
-        for f in extra_files:
-            if os.path.exists(solution_path.parent / f):
-                print(f"-> {f}: ok")
-            else:
-                print(f"-> {f}: can't find {solution_path.parent / f}")
-    else:
-        extra_files = []
-
-    return True, test_suite, extra_files
-
-
-# TODO: stratify the logic of this code
-def create_solution_archive(solution_path, test_suite, extra_files):
+    # Generating the auto grader archive
+    print("The test_suite looks good. Generating the archive:")
+    config = {
+        "MATLAB_support": 0,
+    }
     program_dir = Path(os.path.dirname(__file__))
     solution_dir = Path(solution_path).parent.absolute()
     try:
+        # Copying all the must-have files from the templates (setup.sh, run_autograder, etc)
         os.mkdir(solution_dir / DIST_DIR)
-        shutil.copyfile(program_dir / TEMPLATES_DIR / RUN_TESTS_FILE, solution_dir / DIST_DIR / RUN_TESTS_FILE)
-        generate_requirements(solution_dir, output_path=solution_dir / DIST_DIR / REQUIREMENTS_FILE)
-        shutil.copyfile(program_dir / TEMPLATES_DIR / SETUP_FILE, solution_dir / DIST_DIR / SETUP_FILE)
-        shutil.copyfile(program_dir / TEMPLATES_DIR / RUN_AUTOGRADER_FILE, solution_dir / DIST_DIR / RUN_AUTOGRADER_FILE)
-        # TODO: Fix it
-        matlab = True
-        if matlab:
-            for file in (MATLAB_INSTALL_FILE, OPEN_TUNNEL_FILE, CLOSE_TUNNEL_FILE, RSA_KEY, KNOWN_HOSTS_FILE, MATLAB_NETWORK_LIC_FILE):
-                shutil.copyfile(program_dir / TEMPLATES_DIR / file,
-                                solution_dir / DIST_DIR / file)
-
-        pickle.dump((test_suite, extra_files), open(solution_dir / DIST_DIR / TEST_SUITE_DUMP, "wb"))
-
-        for extra_file in extra_files:
-            try:
-                shutil.copyfile(solution_dir / extra_file, solution_dir / DIST_DIR / extra_file)
-            except FileNotFoundError:
-                print(f"File {os.path.abspath(solution_dir / extra_file)} does not exist.")
+        for file in AUTOGRADER_ARCHVE_FILES:
+            full_path = program_dir / TEMPLATES_DIR / file
+            if not os.path.exists(full_path):
+                print(f"-> {file}: the file {full_path} does not exist. It's likely a gspack installation bug."
+                      f" You should contact {__author__} ({__email__}) or post the issue on the project's Github page.")
                 return False
+            shutil.copyfile(full_path, solution_dir / DIST_DIR / file)
+            print(f"-> {file}: OK")
+        # pipreqs package scans the solution and generates the list of (non-standard) Python packages used.
+        try:
+            # TODO: figure out how to parse the pipreqs' output
+            generate_reqs_output = generate_requirements(solution_dir, output_path=solution_dir / DIST_DIR / REQUIREMENTS_FILE)
+            print("Generating requirements for your solution: OK")
+        except Exception as e:
+            print("Generating requirements for your solution: FAILED with the error:")
+            print(e)
+            return False
 
+        run_autograder_prefix = None
+        run_autograder_suffix = None
+        run_tests_py_prefix = None
+        # Adding MATLAB support
+        if hasattr(solution_module, 'matlab_credentials'):
+            matlab = True
+            print("Adding MATLAB support...")
+            # Checking that all the necessary files are in the credentials folder
+            matlab_folder_path = Path(solution_module.matlab_credentials).expanduser().absolute()
+            if not matlab_folder_path.exists() or not matlab_folder_path.is_dir():
+                print(
+                    f"matlab_credentials: the directory {matlab_folder_path} does not exist"
+                    f" or it's not a directory.")
+                matlab = False
+            else:
+                for file in MATLAB_FILES:
+                    if not os.path.exists(matlab_folder_path / file):
+                        print(f"-> {file}: File {(matlab_folder_path / file).absolute()} does not exist.")
+                        matlab = False
+                    shutil.copyfile(matlab_folder_path / file,
+                                    solution_dir / DIST_DIR / file)
+                    print(f"-> {file}: OK")
+
+                # Setting prefix for the run_tests.py to import matlab.
+                # The reason why this is implemented in such a junky way is
+                # because the "import matlab.engine" should be at the very
+                # first line of the file, otherwise it crashes with some internal
+                # library flags erros
+                run_tests_py_prefix = "import matlab.engine \n"
+
+                # Getting prefix and suffix commands for the run_autograder script, if any
+                if (matlab_folder_path / PROXY_SETTINGS).exists():
+                    with open(matlab_folder_path / PROXY_SETTINGS, "r") as proxy_settings_file:
+                        proxy_settings = json.load(proxy_settings_file)
+                        if proxy_settings['open_tunnel'] is not None:
+                            run_autograder_prefix = proxy_settings['open_tunnel']
+                        if proxy_settings['close_tunnel'] is not None:
+                            run_autograder_suffix = proxy_settings['close_tunnel']
+
+            if matlab:
+                print("MATLAB support added successfully.", end='\n')
+            else:
+                print("MATLAB support was NOT added, see the errors above.", end='\n')
+            config["MATLAB_support"] = 1
+
+        # Create run_tests py given the prefix
+        with open(solution_dir / DIST_DIR / RUN_TESTS_FILE, 'w') as run_tests_dst:
+            if run_tests_py_prefix is not None:
+                run_tests_dst.write(run_tests_py_prefix + "\n")
+            with open(program_dir / TEMPLATES_DIR / RUN_TESTS_FILE, 'r') as run_tests_src:
+                run_tests_dst.write(run_tests_src.read())
+
+        # Create run_autograder file given the prefix and suffix
+        with open(solution_dir / DIST_DIR / RUN_AUTOGRADER_FILE, 'w') as run_autograder_dest:
+            run_autograder_dest.write("#!/usr/bin/env bash \n")
+            if run_autograder_prefix is not None:
+                run_autograder_dest.write(run_autograder_prefix + "\n")
+            with open(program_dir / TEMPLATES_DIR / RUN_AUTOGRADER_FILE, 'r') as run_autograder_src:
+                run_autograder_dest.write(run_autograder_src.read() + "\n")
+            if run_autograder_suffix is not None:
+                run_autograder_dest.write(run_autograder_suffix)
+
+        # Checking and adding extra files from extra_files list,
+        if hasattr(solution_module, 'extra_files'):
+            extra_files = solution_module.extra_files
+            print("Find extra files list:")
+            for extra_file in extra_files:
+                if os.path.exists(solution_path.parent / extra_file):
+                    shutil.copyfile(solution_path.parent / extra_file, solution_dir / DIST_DIR / extra_file)
+                    print(f"-> {extra_file}: OK")
+                else:
+                    print(f"-> {extra_file}: can't find {solution_path.parent / extra_file}")
+        else:
+            extra_files = []
+
+        # Saving the test_suite and list of extra files as a pickle archive.
+        # The reason why it's not in the config file is because it contains values
+        # of the target variables too.
+        pickle.dump((test_suite, extra_files), open(solution_dir / DIST_DIR / TEST_SUITE_DUMP, "wb"))
+        # Saving the config.json file
+        json.dump(config, open(solution_dir / DIST_DIR / CONFIG_JSON, 'w'))
         # Zip all files in DIST directory
         zip_archive = ZipFile(solution_dir / AUTOGRADER_ZIP, 'w')
-        for f in os.listdir(solution_dir / DIST_DIR):
-            zip_archive.write(solution_dir / DIST_DIR / f, arcname=f)
+        for extra_file in os.listdir(solution_dir / DIST_DIR):
+            zip_archive.write(solution_dir / DIST_DIR / extra_file, arcname=extra_file)
         zip_archive.close()
-        print(f"Archive created successfully: \n-> {solution_dir / AUTOGRADER_ZIP}")
+        return True
     finally:
+        # Deleting the temporary dist directory
         if os.path.exists(solution_dir / DIST_DIR):
             shutil.rmtree(solution_dir / DIST_DIR)
-    return True
 
-# TODO: Add MATLAB support option
+
 @click.command(
     help="Genreates archive for gradescope autograder"
 )
@@ -147,12 +227,13 @@ def create_autograder_from_console(**kwargs):
     create_autograder(**kwargs)
 
 
-# TODO: make the success/fail output more descriptive
 def create_autograder(solution):
     solution_path = Path(solution).absolute()
-    is_valid, test_suite, extra_files = validate_solution(solution_path)
-    if is_valid:
-        success = create_solution_archive(solution_path, test_suite, extra_files)
+    success = generate_solution(solution_path)
+    if success:
+        print(f"Archive created successfully: \n-> {solution_path.parent / AUTOGRADER_ZIP}")
+    else:
+        print("The process is aborted, see the error above.")
 
 
 if __name__ == "__main__":

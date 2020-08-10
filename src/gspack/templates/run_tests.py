@@ -1,20 +1,27 @@
-import matlab.engine
-
+import json
 from pathlib import Path
 import pickle
 import types
 import os
 import numpy as np
-import json
 import shutil
 
-#HOME_DIR = Path("/Users/aksh/Storage/repos/gspack/examples/python101/autograder")
+# HOME_DIR = Path("/Users/aksh/Storage/repos/gspack/examples/python101/autograder")
 HOME_DIR = Path("/autograder")
 SOURCE_DIR = HOME_DIR / "source"
 SUBMISSION_DIR = HOME_DIR / "submission"
 TEST_SUITE_DUMP = "test_suite.dump"
 RESULTS_DIR = HOME_DIR / "results"
 RESULTS_JSON = "results.json"
+CONFIG_JSON = "config.json"
+
+with open(SOURCE_DIR / CONFIG_JSON) as f:
+    config = json.load(f)
+if config["MATLAB_support"] == 1:
+    MATLAB_SUPPORT = True
+else:
+    MATLAB_SUPPORT = False
+    matlab = None
 
 
 def matlab2python(a):
@@ -58,29 +65,41 @@ def execute(student_solution_path, language="python"):
             student_answers[test["test_name"]] = solution_module.__dict__.get(test["variable_name"], None)
 
     elif language == "MATLAB":
-        with open(student_solution_path, 'r') as f:
-            with open(SUBMISSION_DIR / 'solution.m', 'w') as f2:
+        if not MATLAB_SUPPORT:
+            err_msg = "MATLAB Support is disabled for this assignment, but a MATLAB file is submitted."
+            print(err_msg)
+            raise NotImplementedError(err_msg)
+        # wrap up the MATLAB main body script as a function
+        with open(student_solution_path) as student_file_src:
+            solution_parts = student_file_src.read().split("function ")
+            main_script_body = solution_parts[0]
+            other_functions = "" if len(solution_parts) == 1 else " ".join(
+                ["\nfunction " + s for s in solution_parts[1:]])
+            with open(SUBMISSION_DIR / 'solution.m', 'w') as student_file_dst:
                 prefix = f"function [{', '.join([test['variable_name'] for test in test_suite])}] = solution() \n"
-                postfix = "\nend"
-                f2.write(prefix)
-                f2.write(f.read())
-                f2.write(postfix)
+                postfix = "\nend\n"
+                student_file_dst.write(prefix)
+                student_file_dst.write(main_script_body)
+                student_file_dst.write(postfix)
+                student_file_dst.write(other_functions)
+        # Execute MATLAB solution file and convert its outputs to python-compartible representation
         try:
             eng = matlab.engine.start_matlab()
-            # wrap up the script as a function
+        except Exception as e:
+            print("MATLAB engine failed to start with the following error")
+            print(e)
+        try:
             output = eng.solution(nargout=len(test_suite))
             for v, test in zip(output, test_suite):
                 student_answers[test["test_name"]] = matlab2python(v)
-
         except Exception as e:
-            # TODO: differentiate between matlab fail and solution fail
             successfully_executed = False
             student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
         finally:
             os.remove(SUBMISSION_DIR / 'solution.m')
-
     else:
-        results["output"] = f"Unsupported language: {language}"
+        successfully_executed = False
+        student_answers["execution_error"] = f"Unsupported language: {language}"
     os.chdir(mydir)
 
     return successfully_executed, student_answers
@@ -90,10 +109,9 @@ if __name__ == '__main__':
     # get test suite
     test_suite, extra_files = pickle.load(open(SOURCE_DIR / TEST_SUITE_DUMP, "rb"))
 
-    results = {
-        "tests": []
-    }
-    # launch student code
+    results = {}
+
+    # Find the student's solution file and figure out the language by its extension
     student_solution_path = []
     language = None
     for f in os.listdir(SUBMISSION_DIR):
@@ -117,13 +135,18 @@ if __name__ == '__main__':
         # copy all extra files to the student's solution folder
         for f in extra_files:
             shutil.copyfile(SOURCE_DIR / f, SUBMISSION_DIR / f)
+
         # execute student's solution
         successfully_executed, student_answers = execute(student_solution_path, language=language)
         if not successfully_executed:
+            results["output"] = student_answers["execution_error"]
+            results["score"] = 0
             with open(RESULTS_DIR / RESULTS_JSON, "w") as f:
                 json.dump(results, f, indent=4)
             exit(0)
 
+        # Grade student's solution results
+        results["tests"] = []
         for i, test in enumerate(test_suite):
             true_answer = test["value"]
             test_result = {

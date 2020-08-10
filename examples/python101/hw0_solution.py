@@ -38,3 +38,5 @@ test_suite = [
 ]
 
 extra_files = ["matrix.csv"]
+
+matlab_credentials = "~/Storage/repos/gspack_uw_amath_matlab_credentials"
