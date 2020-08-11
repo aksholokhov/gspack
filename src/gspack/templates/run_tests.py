@@ -66,37 +66,39 @@ def execute(student_solution_path, language="python"):
 
     elif language == "MATLAB":
         if not MATLAB_SUPPORT:
-            err_msg = "MATLAB Support is disabled for this assignment, but a MATLAB file is submitted."
-            print(err_msg)
-            raise NotImplementedError(err_msg)
-        # wrap up the MATLAB main body script as a function
-        with open(student_solution_path) as student_file_src:
-            solution_parts = student_file_src.read().split("function ")
-            main_script_body = solution_parts[0]
-            other_functions = "" if len(solution_parts) == 1 else " ".join(
-                ["\nfunction " + s for s in solution_parts[1:]])
-            with open(SUBMISSION_DIR / 'solution.m', 'w') as student_file_dst:
-                prefix = f"function [{', '.join([test['variable_name'] for test in test_suite])}] = solution() \n"
-                postfix = "\nend\n"
-                student_file_dst.write(prefix)
-                student_file_dst.write(main_script_body)
-                student_file_dst.write(postfix)
-                student_file_dst.write(other_functions)
-        # Execute MATLAB solution file and convert its outputs to python-compartible representation
-        try:
-            eng = matlab.engine.start_matlab()
-        except Exception as e:
-            print("MATLAB engine failed to start with the following error")
-            print(e)
-        try:
-            output = eng.solution(nargout=len(test_suite))
-            for v, test in zip(output, test_suite):
-                student_answers[test["test_name"]] = matlab2python(v)
-        except Exception as e:
             successfully_executed = False
-            student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
-        finally:
-            os.remove(SUBMISSION_DIR / 'solution.m')
+            err_msg = "MATLAB Support is disabled for this assignment, but a MATLAB file is submitted."
+            student_answers["execution_error"] = err_msg
+            #raise NotImplementedError(err_msg)
+        # wrap up the MATLAB main body script as a function
+        else:
+            with open(student_solution_path) as student_file_src:
+                solution_parts = student_file_src.read().split("function ")
+                main_script_body = solution_parts[0]
+                other_functions = "" if len(solution_parts) == 1 else " ".join(
+                    ["\nfunction " + s for s in solution_parts[1:]])
+                with open(SUBMISSION_DIR / 'solution.m', 'w') as student_file_dst:
+                    prefix = f"function [{', '.join([test['variable_name'] for test in test_suite])}] = solution() \n"
+                    postfix = "\nend\n"
+                    student_file_dst.write(prefix)
+                    student_file_dst.write(main_script_body)
+                    student_file_dst.write(postfix)
+                    student_file_dst.write(other_functions)
+            # Execute MATLAB solution file and convert its outputs to python-compartible representation
+            try:
+                eng = matlab.engine.start_matlab()
+            except Exception as e:
+                print("MATLAB engine failed to start with the following error")
+                print(e)
+            try:
+                output = eng.solution(nargout=len(test_suite))
+                for v, test in zip(output, test_suite):
+                    student_answers[test["test_name"]] = matlab2python(v)
+            except Exception as e:
+                successfully_executed = False
+                student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
+            finally:
+                os.remove(SUBMISSION_DIR / 'solution.m')
     else:
         successfully_executed = False
         student_answers["execution_error"] = f"Unsupported language: {language}"
