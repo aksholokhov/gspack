@@ -14,6 +14,7 @@ TEST_SUITE_DUMP = "test_suite.dump"
 RESULTS_DIR = HOME_DIR / "results"
 RESULTS_JSON = "results.json"
 CONFIG_JSON = "config.json"
+SUBMISSION_METADATA_JSON = "submission_metadata.json"
 
 with open(SOURCE_DIR / CONFIG_JSON) as f:
     config = json.load(f)
@@ -69,7 +70,7 @@ def execute(student_solution_path, language="python"):
             successfully_executed = False
             err_msg = "MATLAB Support is disabled for this assignment, but a MATLAB file is submitted."
             student_answers["execution_error"] = err_msg
-            #raise NotImplementedError(err_msg)
+
         # wrap up the MATLAB main body script as a function
         else:
             with open(student_solution_path) as student_file_src:
@@ -107,11 +108,37 @@ def execute(student_solution_path, language="python"):
     return successfully_executed, student_answers
 
 
+def dump_results_and_exit(results, keep_previous_maximal_score=True):
+    if keep_previous_maximal_score:
+        previous_submissions = submission_metadata['previous_submissions']
+        if len(previous_submissions) > 0:
+            previous_maximal_score = max([float(submission['score']) for submission in previous_submissions])
+            current_score = results.get("score", 0)
+            if current_score < previous_maximal_score:
+                results['output'] += "\n The score is set to your previous maximal score."
+            results["score"] = max(current_score, previous_maximal_score)
+        else:
+            results["score"] = 0
+    with open(RESULTS_DIR / RESULTS_JSON, "w") as f:
+        json.dump(results, f, indent=4)
+    exit(0)
+
+
 if __name__ == '__main__':
+    results = {}
+
+    # Reading submission metadata
+    with open(HOME_DIR / SUBMISSION_METADATA_JSON, 'r') as metadata_file:
+        submission_metadata = json.load(metadata_file)
+
+    number_of_attempts = config.get("number_of_attempts", None)
+    if number_of_attempts is not None:
+        if len(submission_metadata['previous_submissions']) > number_of_attempts:
+            results["output"] = f"You've already used all {number_of_attempts} allowed attempts."
+            dump_results_and_exit(results)
+
     # get test suite
     test_suite, extra_files = pickle.load(open(SOURCE_DIR / TEST_SUITE_DUMP, "rb"))
-
-    results = {}
 
     # Find the student's solution file and figure out the language by its extension
     student_solution_path = []
@@ -127,76 +154,75 @@ if __name__ == '__main__':
             continue
     if len(student_solution_path) == 0:
         results["output"] = "No student solution files found."
-    elif len(student_solution_path) > 1:
+        dump_results_and_exit(results)
+    if len(student_solution_path) > 1:
         results["output"] = ("Don't know which one is the right solution file: \n ->" +
                              "\n ->".join([str(path) for path in student_solution_path]) +
                              "\n You need to submit only one solution file."
                              )
-    else:
-        student_solution_path = student_solution_path[0]
-        # copy all extra files to the student's solution folder
-        for f in extra_files:
-            shutil.copyfile(SOURCE_DIR / f, SUBMISSION_DIR / f)
+        dump_results_and_exit(results)
 
-        # execute student's solution
-        successfully_executed, student_answers = execute(student_solution_path, language=language)
-        if not successfully_executed:
-            results["output"] = student_answers["execution_error"]
-            results["score"] = 0
-            with open(RESULTS_DIR / RESULTS_JSON, "w") as f:
-                json.dump(results, f, indent=4)
-            exit(0)
+    student_solution_path = student_solution_path[0]
+    # copy all extra files to the student's solution folder
+    for f in extra_files:
+        shutil.copyfile(SOURCE_DIR / f, SUBMISSION_DIR / f)
 
-        # Grade student's solution results
-        results["tests"] = []
-        for i, test in enumerate(test_suite):
-            true_answer = test["value"]
-            test_result = {
-                "name": f"{i + 1}. {test['test_name']}",
-                "score": 0,
-                "visibility": "visible"
-            }
+    # execute student's solution
+    successful_execution, student_answers_dict = execute(student_solution_path, language=language)
+    if not successful_execution:
+        results["output"] = student_answers_dict["execution_error"]
+        results["score"] = 0
+        dump_results_and_exit()
 
-            if test.get("description", None) is not None:
-                test_result["name"] += f": {test['description']}"
+    # Grade student's solution results
+    results["tests"] = []
+    for i, test in enumerate(test_suite):
+        true_answer = test["value"]
+        test_result = {
+            "name": f"{i + 1}. {test['test_name']}",
+            "score": 0,
+            "visibility": "visible"
+        }
 
-            results["tests"].append(test_result)
-            if student_answers[test["test_name"]] is None:
-                test_result["output"] = (f"Variable {test['variable_name']} is not defined in your solution file." +
-                                         "" if test.get("hint_not_defined",
-                                                        None) is None else f"\nHint: {test['hint_not_defined']}")
-                continue
-            answer = student_answers[test["test_name"]]
+        if test.get("description", None) is not None:
+            test_result["name"] += f": {test['description']}"
 
-            if not ((type(answer) == type(true_answer)) or (
-                    type(answer) in (float, int) and (type(true_answer) in (float, int)))):
-                test_result[
-                    "output"] = f"Wrong answer type: the type of your variable {test['variable_name']} is {type(answer)}, " \
-                                f"but it should be {type(true_answer)}"
-                test_result["output"] += "" if test.get("hint_wrong_type",
-                                                        None) is None else f"\nHint: {test['hint_wrong_type']}"
+        results["tests"].append(test_result)
+        if student_answers_dict[test["test_name"]] is None:
+            test_result["output"] = (f"Variable {test['variable_name']} is not defined in your solution file." +
+                                     "" if test.get("hint_not_defined",
+                                                    None) is None else f"\nHint: {test['hint_not_defined']}")
+            continue
+        answer = student_answers_dict[test["test_name"]]
 
-                continue
-            if type(answer) is np.ndarray and answer.shape != true_answer.shape:
-                test_result[
-                    "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {answer.shape}, " \
-                                f"but it should be {true_answer.shape}"
-                test_result["output"] += "" if test.get("hint_wrong_size",
-                                                        None) is None else f"\nHint: {test['hint_wrong_size']}"
-                continue
-            if np.isnan(answer).any():
-                test_result["output"] = f"Your variable {test['variable_name']} contains NaNs."
-                test_result["output"] += "" if test.get("hint_nans", None) is None else f"\nHint: {test['hint_nans']}"
-                continue
-            rtol = test.get("rtol", None) or 1e-5
-            atol = test.get("atol", None) or 1e-8
-            if not np.allclose(answer, true_answer, rtol=rtol, atol=atol):
-                test_result["output"] = f"Your answer is not within tolerance from the right answer."
-                test_result["output"] += "" if test.get("hint_tolerance",
-                                                        None) is None else f"\nHint: {test['hint_tolerance']}"
-                continue
-            test_result["output"] = "Correct."
-            test_result["score"] = test["score"]
+        if not ((type(answer) == type(true_answer)) or (
+                type(answer) in (float, int) and (type(true_answer) in (float, int)))):
+            test_result[
+                "output"] = f"Wrong answer type: the type of your variable {test['variable_name']} is {type(answer)}, " \
+                            f"but it should be {type(true_answer)}"
+            test_result["output"] += "" if test.get("hint_wrong_type",
+                                                    None) is None else f"\nHint: {test['hint_wrong_type']}"
 
-    with open(RESULTS_DIR / RESULTS_JSON, "w") as f:
-        json.dump(results, f, indent=4)
+            continue
+        if type(answer) is np.ndarray and answer.shape != true_answer.shape:
+            test_result[
+                "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {answer.shape}, " \
+                            f"but it should be {true_answer.shape}"
+            test_result["output"] += "" if test.get("hint_wrong_size",
+                                                    None) is None else f"\nHint: {test['hint_wrong_size']}"
+            continue
+        if np.isnan(answer).any():
+            test_result["output"] = f"Your variable {test['variable_name']} contains NaNs."
+            test_result["output"] += "" if test.get("hint_nans", None) is None else f"\nHint: {test['hint_nans']}"
+            continue
+        rtol = test.get("rtol", None) or 1e-5
+        atol = test.get("atol", None) or 1e-8
+        if not np.allclose(answer, true_answer, rtol=rtol, atol=atol):
+            test_result["output"] = f"Your answer is not within tolerance from the right answer."
+            test_result["output"] += "" if test.get("hint_tolerance",
+                                                    None) is None else f"\nHint: {test['hint_tolerance']}"
+            continue
+        test_result["output"] = "Correct."
+        test_result["score"] = test["score"]
+
+    dump_results_and_exit(results)

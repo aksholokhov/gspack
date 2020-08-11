@@ -196,6 +196,13 @@ def generate_solution(solution_path):
         else:
             extra_files = []
 
+        # Checking if the number of submission attempts is set to be limited
+        if hasattr(solution_module, 'number_of_attempts'):
+            config['number_of_attempts'] = solution_module.number_of_attempts
+            print(f"Number of attempts: {solution_module.number_of_attempts}")
+        else:
+            print(f"Number of attempts: unlimited.")
+
         # Saving the test_suite and list of extra files as a pickle archive.
         # The reason why it's not in the config file is because it contains values
         # of the target variables too.
