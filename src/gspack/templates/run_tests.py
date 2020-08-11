@@ -6,6 +6,8 @@ import os
 import numpy as np
 import shutil
 
+import numbers
+
 # HOME_DIR = Path("/Users/aksh/Storage/repos/gspack/examples/python101/autograder")
 HOME_DIR = Path("/autograder")
 SOURCE_DIR = HOME_DIR / "source"
@@ -63,7 +65,7 @@ def execute(student_solution_path, language="python"):
             student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
 
         for test in test_suite:
-            student_answers[test["test_name"]] = solution_module.__dict__.get(test["variable_name"], None)
+            student_answers[test["variable_name"]] = solution_module.__dict__.get(test["variable_name"], None)
 
     elif language == "MATLAB":
         if not MATLAB_SUPPORT:
@@ -122,6 +124,19 @@ def dump_results_and_exit(results, keep_previous_maximal_score=True):
     with open(RESULTS_DIR / RESULTS_JSON, "w") as f:
         json.dump(results, f, indent=4)
     exit(0)
+
+
+def reduce_type(a):
+    if isinstance(a, numbers.Number):
+        return float(a)
+    elif ((isinstance(a, np.ndarray) and a.flatten().shape == (1,))
+          or (isinstance(a, list) and len(a) == 1)
+          or (isinstance(a, set) and len(a) == 1)):
+        return float(a[0])
+    elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
+        return np.array(a, dtype=float)
+    else:
+        return a
 
 
 if __name__ == '__main__':
@@ -188,14 +203,13 @@ if __name__ == '__main__':
             test_result["name"] += f": {test['description']}"
 
         results["tests"].append(test_result)
-        if student_answers_dict[test["test_name"]] is None:
+        answer = student_answers_dict.get(test["variable_name"], None)
+        if answer is None:
             test_result["output"] = (f"Variable {test['variable_name']} is not defined in your solution file." +
                                      "" if test.get("hint_not_defined",
                                                     None) is None else f"\nHint: {test['hint_not_defined']}")
             continue
-        answer = student_answers_dict[test["test_name"]]
-
-        if not ((type(answer) == type(true_answer)) or (
+        if not ((type(reduce_type(answer)) == type(reduce_type(true_answer))) or (
                 type(answer) in (float, int) and (type(true_answer) in (float, int)))):
             test_result[
                 "output"] = f"Wrong answer type: the type of your variable {test['variable_name']} is {type(answer)}, " \
