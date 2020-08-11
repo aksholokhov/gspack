@@ -119,8 +119,6 @@ def dump_results_and_exit(results, keep_previous_maximal_score=True):
             if current_score < previous_maximal_score:
                 results['output'] += "\n The score is set to your previous maximal score."
             results["score"] = max(current_score, previous_maximal_score)
-        else:
-            results["score"] = 0
     with open(RESULTS_DIR / RESULTS_JSON, "w") as f:
         json.dump(results, f, indent=4)
     exit(0)
@@ -191,6 +189,7 @@ if __name__ == '__main__':
 
     # Grade student's solution results
     results["tests"] = []
+    total_score = 0
     for i, test in enumerate(test_suite):
         true_answer = test["value"]
         test_result = {
@@ -238,5 +237,6 @@ if __name__ == '__main__':
             continue
         test_result["output"] = "Correct."
         test_result["score"] = test["score"]
-
+        total_score += test["score"]
+    results["score"] = total_score
     dump_results_and_exit(results)
