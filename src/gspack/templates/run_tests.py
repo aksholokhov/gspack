@@ -138,7 +138,9 @@ def reduce_type(a):
 
 
 if __name__ == '__main__':
-    results = {}
+    results = {
+        "output": ""
+    }
 
     # Reading submission metadata
     with open(HOME_DIR / SUBMISSION_METADATA_JSON, 'r') as metadata_file:
