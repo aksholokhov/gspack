@@ -96,7 +96,7 @@ def execute(student_solution_path, language="python"):
             try:
                 output = eng.solution(nargout=len(test_suite))
                 for v, test in zip(output, test_suite):
-                    student_answers[test["test_name"]] = matlab2python(v)
+                    student_answers[test["variable_name"]] = matlab2python(v)
             except Exception as e:
                 successfully_executed = False
                 student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
