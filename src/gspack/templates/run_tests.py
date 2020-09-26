@@ -40,6 +40,7 @@ def matlab2python(a):
                           matlab.uint64
                           )
     if type(a) in matlab_array_types:
+        # convert (x, 1) arrays to (x, ) so it's compatible to python
         return np.array(a)
     elif type(a) == int or type(a) == float or type(a) == str:
         return a
@@ -132,7 +133,12 @@ def reduce_type(a):
           or (isinstance(a, set) and len(a) == 1)):
         return float(a[0])
     elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
-        return np.array(a, dtype=float)
+        res = np.array(a, dtype=float)
+        if len(res.shape) == 2:
+            if res.shape[1] == 1:
+                # make all row vectors (x, 1) to be arrays(x, )
+                res = res[:, 0]
+        return res
     else:
         return a
 
@@ -210,36 +216,40 @@ if __name__ == '__main__':
                                      "" if test.get("hint_not_defined",
                                                     None) is None else f"\nHint: {test['hint_not_defined']}")
             continue
-        if not ((type(reduce_type(answer)) == type(reduce_type(true_answer))) or (
-                type(answer) in (float, int) and (type(true_answer) in (float, int)))):
+
+        reduced_answer = reduce_type(answer)
+        reduced_true_answer = reduce_type(true_answer)
+
+        if not ((type(reduced_answer) == type(reduced_true_answer)) or (
+                type(reduced_answer) in (float, int) and (type(reduced_true_answer) in (float, int)))):
             test_result[
                 "output"] = f"Wrong answer type: the type of your variable {test['variable_name']} is {type(answer)}, " \
-                            f"but it should be {type(true_answer)}"
+                            f"but it should be {type(reduced_true_answer)}"
             test_result["output"] += "" if test.get("hint_wrong_type",
                                                     None) is None else f"\nHint: {test['hint_wrong_type']}"
 
             continue
-        if type(answer) is np.ndarray:
-            if answer.shape != true_answer.shape:
+        if type(reduced_answer) is np.ndarray:
+            if reduced_answer.shape != reduced_true_answer.shape:
                 test_result[
                     "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {answer.shape}, " \
-                                f"but it should be {true_answer.shape}"
+                                f"but it should be {reduced_true_answer.shape}"
                 test_result["output"] += "" if test.get("hint_wrong_size",
                                                         None) is None else f"\nHint: {test['hint_wrong_size']}"
                 continue
-            if np.isnan(answer).any():
+            if np.isnan(reduced_answer).any():
                 test_result["output"] = f"Your variable {test['variable_name']} contains NaNs."
                 test_result["output"] += "" if test.get("hint_nans", None) is None else f"\nHint: {test['hint_nans']}"
                 continue
             rtol = test.get("rtol", None) or 1e-5
             atol = test.get("atol", None) or 1e-8
-            if not np.allclose(answer, true_answer, rtol=rtol, atol=atol):
+            if not np.allclose(reduced_answer, reduced_true_answer, rtol=rtol, atol=atol):
                 test_result["output"] = f"Your answer is not within tolerance from the right answer."
                 test_result["output"] += "" if test.get("hint_tolerance",
                                                         None) is None else f"\nHint: {test['hint_tolerance']}"
                 continue
-        elif type(answer) == str:
-            if not answer.lower().strip() == true_answer.lower().strip():
+        elif type(reduced_answer) == str:
+            if not reduced_answer.lower().strip() == reduced_true_answer.lower().strip():
                 test_result["output"] = f"Your answer does not match the right answer."
 
         test_result["output"] = "Correct."
