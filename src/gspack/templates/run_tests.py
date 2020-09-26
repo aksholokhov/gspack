@@ -135,9 +135,9 @@ def reduce_type(a):
     elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
         res = np.array(a, dtype=float)
         if len(res.shape) == 2:
-            if res.shape[1] == 1:
-                # make all row vectors (x, 1) to be arrays(x, )
-                res = res[:, 0]
+            if res.shape[0] == 1:
+                # make all row vectors (1, x) to be arrays(x, )
+                res = res[0, :]
         return res
     else:
         return a
