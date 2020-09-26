@@ -41,7 +41,7 @@ def matlab2python(a):
                           )
     if type(a) in matlab_array_types:
         return np.array(a)
-    elif type(a) == int or type(a) == float:
+    elif type(a) == int or type(a) == float or type(a) == str:
         return a
     else:
         raise ValueError(f"Unknown MATLAB type: {type(a)}")
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     if not successful_execution:
         results["output"] = student_answers_dict["execution_error"]
         results["score"] = 0
-        dump_results_and_exit()
+        dump_results_and_exit(results)
 
     # Grade student's solution results
     results["tests"] = []
@@ -219,24 +219,29 @@ if __name__ == '__main__':
                                                     None) is None else f"\nHint: {test['hint_wrong_type']}"
 
             continue
-        if type(answer) is np.ndarray and answer.shape != true_answer.shape:
-            test_result[
-                "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {answer.shape}, " \
-                            f"but it should be {true_answer.shape}"
-            test_result["output"] += "" if test.get("hint_wrong_size",
-                                                    None) is None else f"\nHint: {test['hint_wrong_size']}"
-            continue
-        if np.isnan(answer).any():
-            test_result["output"] = f"Your variable {test['variable_name']} contains NaNs."
-            test_result["output"] += "" if test.get("hint_nans", None) is None else f"\nHint: {test['hint_nans']}"
-            continue
-        rtol = test.get("rtol", None) or 1e-5
-        atol = test.get("atol", None) or 1e-8
-        if not np.allclose(answer, true_answer, rtol=rtol, atol=atol):
-            test_result["output"] = f"Your answer is not within tolerance from the right answer."
-            test_result["output"] += "" if test.get("hint_tolerance",
-                                                    None) is None else f"\nHint: {test['hint_tolerance']}"
-            continue
+        if type(answer) is np.ndarray:
+            if answer.shape != true_answer.shape:
+                test_result[
+                    "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {answer.shape}, " \
+                                f"but it should be {true_answer.shape}"
+                test_result["output"] += "" if test.get("hint_wrong_size",
+                                                        None) is None else f"\nHint: {test['hint_wrong_size']}"
+                continue
+            if np.isnan(answer).any():
+                test_result["output"] = f"Your variable {test['variable_name']} contains NaNs."
+                test_result["output"] += "" if test.get("hint_nans", None) is None else f"\nHint: {test['hint_nans']}"
+                continue
+            rtol = test.get("rtol", None) or 1e-5
+            atol = test.get("atol", None) or 1e-8
+            if not np.allclose(answer, true_answer, rtol=rtol, atol=atol):
+                test_result["output"] = f"Your answer is not within tolerance from the right answer."
+                test_result["output"] += "" if test.get("hint_tolerance",
+                                                        None) is None else f"\nHint: {test['hint_tolerance']}"
+                continue
+        elif type(answer) == str:
+            if not answer.lower().strip() == true_answer.lower().strip():
+                test_result["output"] = f"Your answer does not match the right answer."
+
         test_result["output"] = "Correct."
         test_result["score"] = test["score"]
         total_score += test["score"]
