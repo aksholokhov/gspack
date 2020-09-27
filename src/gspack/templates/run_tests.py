@@ -53,8 +53,15 @@ def execute(student_solution_path, language="python"):
     mydir = os.getcwd()
     os.chdir(student_solution_path.parent)
 
-    if language == "PYTHON":
+    try:
         solution_code = open(student_solution_path, 'r').read()
+    except Exception as e:
+        successfully_executed = False
+        student_answers["execution_error"] = f"Gradescope is unable to read your submission file: \n {str(e)} \n" \
+                                             f"This might happen if your file is damaged or improperly encoded (not in UTF-8)"
+        return successfully_executed, student_answers
+
+    if language == "PYTHON":
         solution_module_name = os.path.basename(student_solution_path)
         solution_module = types.ModuleType(solution_module_name)
         solution_module.__file__ = os.path.abspath(student_solution_path)
@@ -63,13 +70,14 @@ def execute(student_solution_path, language="python"):
         except Exception as e:
             successfully_executed = False
             student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
+            return successfully_executed, student_answers
 
         for test in test_suite:
             answer_value = solution_module.__dict__.get(test["variable_name"], None)
             if answer_value is None:
                 successfully_executed = False
                 student_answers["execution_error"] = f"Variable {test['variable_name']} (and maybe others) is not assigned in your solution."
-                break
+                return successfully_executed, student_answers
             else:
                 student_answers[test["variable_name"]] = answer_value
 
@@ -78,35 +86,37 @@ def execute(student_solution_path, language="python"):
             successfully_executed = False
             err_msg = "MATLAB Support is disabled for this assignment, but a MATLAB file is submitted."
             student_answers["execution_error"] = err_msg
+            return successfully_executed, student_answers
 
         # wrap up the MATLAB main body script as a function
         else:
-            with open(student_solution_path) as student_file_src:
-                solution_parts = student_file_src.read().split("function ")
-                main_script_body = solution_parts[0]
-                other_functions = "" if len(solution_parts) == 1 else " ".join(
-                    ["\nfunction " + s for s in solution_parts[1:]])
-                with open(SUBMISSION_DIR / 'solution.m', 'w') as student_file_dst:
-                    all_variables = ', '.join([test['variable_name'] for test in test_suite])
-                    prefix = f"function [consoleout, {all_variables}] = solution() \n " \
-                             f"[consoleout, {all_variables}] = evalc('student_solution(0)'); \n" \
-                             f"end \n" \
-                             f"\n" \
-                             f"function [{all_variables}] = student_solution(arg) \n "
-                    postfix = "\nend\n"
-                    student_file_dst.write(prefix)
-                    student_file_dst.write(main_script_body)
-                    student_file_dst.write(postfix)
-                    student_file_dst.write(other_functions)
+            solution_parts = solution_code.split("function ")
+            main_script_body = solution_parts[0]
+            other_functions = "" if len(solution_parts) == 1 else " ".join(
+                ["\nfunction " + s for s in solution_parts[1:]])
+            with open(SUBMISSION_DIR / 'solution.m', 'w') as student_file_dst:
+                all_variables = ', '.join([test['variable_name'] for test in test_suite])
+                prefix = f"function [consoleout, {all_variables}] = solution() \n " \
+                         f"[consoleout, {all_variables}] = evalc('student_solution(0)'); \n" \
+                         f"end \n" \
+                         f"\n" \
+                         f"function [{all_variables}] = student_solution(arg) \n "
+                postfix = "\nend\n"
+                student_file_dst.write(prefix)
+                student_file_dst.write(main_script_body)
+                student_file_dst.write(postfix)
+                student_file_dst.write(other_functions)
             # Execute MATLAB solution file and convert its outputs to python-compartible representation
             try:
                 eng = matlab.engine.start_matlab()
             except Exception as e:
-                print("MATLAB engine failed to start with the following error")
-                print(e)
+                successfully_executed = False
+                student_answers["execution_error"]= f"MATLAB engine failed to start with the following error: \n {e}." \
+                                                    f" Please contact your instructor for assistance."
+                return successfully_executed, student_answers
             try:
-                output = eng.solution(nargout=len(test_suite)+1)
-                console_output = output[0] # decide later what to do with it
+                output = eng.solution(nargout=len(test_suite) + 1)
+                console_output = output[0]  # decide later what to do with it
                 for v, test in zip(output[1:], test_suite):
                     student_answers[test["variable_name"]] = matlab2python(v)
             except Exception as e:
@@ -115,8 +125,11 @@ def execute(student_solution_path, language="python"):
                 if str(e) == "MATLAB function cannot be evaluated":
                     student_answers["execution_error"] += "\n Check that you suppress all console outputs " \
                                                           "(semicolumn at the end of line), especially in loops."
-                elif str(e).endswith(' (and maybe others) not assigned during call to "solution>student_solution".\n'):
-                    student_answers["execution_error"] += "\n Check that you defined the aformentioned variable in your solution file."
+                elif str(e).endswith(
+                        ' (and maybe others) not assigned during call to "solution>student_solution".\n'):
+                    student_answers[
+                        "execution_error"] += "\n Check that you defined the aformentioned variable in your solution file."
+                return  successfully_executed, student_answers
             finally:
                 os.remove(SUBMISSION_DIR / 'solution.m')
     else:
