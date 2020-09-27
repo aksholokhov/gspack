@@ -40,7 +40,6 @@ def matlab2python(a):
                           matlab.uint64
                           )
     if type(a) in matlab_array_types:
-        # convert (x, 1) arrays to (x, ) so it's compatible to python
         return np.array(a)
     elif type(a) == int or type(a) == float or type(a) == str:
         return a
@@ -151,10 +150,10 @@ def reduce_type(a):
         return float(a[0])
     elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
         res = np.array(a, dtype=float)
-        if len(res.shape) == 2:
-            if res.shape[0] == 1:
-                # make all row vectors (1, x) to be arrays(x, )
-                res = res[0, :]
+        # if len(res.shape) == 2:
+        #     if res.shape[0] == 1:
+        #         # make all row vectors (1, x) to be arrays(x, )
+        #         res = res[0, :]
         return res
     else:
         return a
