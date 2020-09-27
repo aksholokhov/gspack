@@ -268,7 +268,7 @@ if __name__ == '__main__':
         elif type(reduced_answer) == str:
             if not reduced_answer.lower().strip() == reduced_true_answer.lower().strip():
                 test_result["output"] = f"Your answer does not match the right answer."
-
+                continue
         test_result["output"] = "Correct."
         test_result["score"] = test["score"]
         total_score += test["score"]
