@@ -66,7 +66,13 @@ def execute(student_solution_path, language="python"):
             student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
 
         for test in test_suite:
-            student_answers[test["variable_name"]] = solution_module.__dict__.get(test["variable_name"], None)
+            answer_value = solution_module.__dict__.get(test["variable_name"], None)
+            if answer_value is None:
+                successfully_executed = False
+                student_answers["execution_error"] = f"Variable {test['variable_name']} (and maybe others) is not assigned in your solution."
+                break
+            else:
+                student_answers[test["variable_name"]] = answer_value
 
     elif language == "MATLAB":
         if not MATLAB_SUPPORT:
@@ -82,7 +88,12 @@ def execute(student_solution_path, language="python"):
                 other_functions = "" if len(solution_parts) == 1 else " ".join(
                     ["\nfunction " + s for s in solution_parts[1:]])
                 with open(SUBMISSION_DIR / 'solution.m', 'w') as student_file_dst:
-                    prefix = f"function [{', '.join([test['variable_name'] for test in test_suite])}] = solution() \n"
+                    all_variables = ', '.join([test['variable_name'] for test in test_suite])
+                    prefix = f"function [consoleout, {all_variables}] = solution() \n " \
+                             f"[consoleout, {all_variables}] = evalc('student_solution(0)'); \n" \
+                             f"end \n" \
+                             f"\n" \
+                             f"function [{all_variables}] = student_solution(arg) \n "
                     postfix = "\nend\n"
                     student_file_dst.write(prefix)
                     student_file_dst.write(main_script_body)
@@ -95,12 +106,18 @@ def execute(student_solution_path, language="python"):
                 print("MATLAB engine failed to start with the following error")
                 print(e)
             try:
-                output = eng.solution(nargout=len(test_suite))
-                for v, test in zip(output, test_suite):
+                output = eng.solution(nargout=len(test_suite)+1)
+                console_output = output[0] # decide later what to do with it
+                for v, test in zip(output[1:], test_suite):
                     student_answers[test["variable_name"]] = matlab2python(v)
             except Exception as e:
                 successfully_executed = False
                 student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
+                if str(e) == "MATLAB function cannot be evaluated":
+                    student_answers["execution_error"] += "\n Check that you suppress all console outputs " \
+                                                          "(semicolumn at the end of line), especially in loops."
+                elif str(e).endswith(' (and maybe others) not assigned during call to "solution>student_solution".\n'):
+                    student_answers["execution_error"] += "\n Check that you defined the aformentioned variable in your solution file."
             finally:
                 os.remove(SUBMISSION_DIR / 'solution.m')
     else:
