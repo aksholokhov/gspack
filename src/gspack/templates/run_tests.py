@@ -171,6 +171,24 @@ def reduce_type(a):
     else:
         return a
 
+def print_reduced_type(a):
+    if isinstance(a, numbers.Number):
+        return "number"
+    elif ((isinstance(a, np.ndarray) and a.flatten().shape == (1,))
+          or (isinstance(a, list) and len(a) == 1)
+          or (isinstance(a, set) and len(a) == 1)):
+        return "number"
+    elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
+        res = np.array(a, dtype=float)
+        # if len(res.shape) == 2:
+        #     if res.shape[0] == 1:
+        #         # make all row vectors (1, x) to be arrays(x, )
+        #         res = res[0, :]
+        return f"matrix of shape {res.shape}"
+    elif isinstance(a, str):
+        return "string"
+    else:
+        return str(type(a))
 
 if __name__ == '__main__':
     results = {
@@ -252,24 +270,26 @@ if __name__ == '__main__':
         if not ((type(reduced_answer) == type(reduced_true_answer)) or (
                 type(reduced_answer) in (float, int) and (type(reduced_true_answer) in (float, int)))):
             test_result[
-                "output"] = f"Wrong answer type: the type of your variable {test['variable_name']} is {type(answer)}, " \
-                            f"but it should be {type(reduced_true_answer)}"
+                "output"] = f"Wrong answer type: the type of your variable {test['variable_name']} is {print_reduced_type(reduced_answer)}, " \
+                            f"but it should be {print_reduced_type(reduced_true_answer)}"
             test_result["output"] += "" if test.get("hint_wrong_type",
                                                     None) is None else f"\nHint: {test['hint_wrong_type']}"
 
             continue
-        if type(reduced_answer) is np.ndarray:
-            if reduced_answer.shape != reduced_true_answer.shape:
-                test_result[
-                    "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {answer.shape}, " \
-                                f"but it should be {reduced_true_answer.shape}"
-                test_result["output"] += "" if test.get("hint_wrong_size",
-                                                        None) is None else f"\nHint: {test['hint_wrong_size']}"
-                continue
+        if (type(reduced_answer) is np.ndarray) or (type(reduced_answer) is float):
+            if type(reduced_answer) is np.ndarray:
+                if reduced_answer.shape != reduced_true_answer.shape:
+                    test_result[
+                        "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {answer.shape}, " \
+                                    f"but it should be {reduced_true_answer.shape}"
+                    test_result["output"] += "" if test.get("hint_wrong_size",
+                                                            None) is None else f"\nHint: {test['hint_wrong_size']}"
+                    continue
             if np.isnan(reduced_answer).any():
                 test_result["output"] = f"Your variable {test['variable_name']} contains NaNs."
                 test_result["output"] += "" if test.get("hint_nans", None) is None else f"\nHint: {test['hint_nans']}"
                 continue
+
             rtol = test.get("rtol", None) or 1e-5
             atol = test.get("atol", None) or 1e-8
             if not np.allclose(reduced_answer, reduced_true_answer, rtol=rtol, atol=atol):
