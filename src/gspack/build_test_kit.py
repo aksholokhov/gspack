@@ -87,8 +87,9 @@ def generate_solution(solution_path):
     print("Found the test suite configuration:")
     for test in test_suite:
         if not hasattr(solution_module, test['variable_name']):
-            print(f"-> {test['test_name']}: WARNING: variable {test['variable_name']} is set to be checked"
+            print(f"-> {test['test_name']}: ERROR: variable {test['variable_name']} is set to be checked"
                   f" but it's not defined after the solution finishes its execution.")
+            return False
         else:
             print(f"-> {test['test_name']}: OK")
             test["value"] = solution_module.__getattribute__(test["variable_name"])
