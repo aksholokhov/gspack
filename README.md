@@ -178,3 +178,11 @@ extra_files = ["test_data.csv", "train_data.csv"]
 ``` 
 `gspack` expects them to be in the same directory as the solution script. It will add them to the `autograder.csv` 
 and will place them accordingly when grading students submissions. The kind of files or their extension do not matter.
+
+**Q**: How can I set the maximum number of attempts?
+
+**A**: By setting (anywhere in the solution):
+```python
+number_of_attempts = 5    # or whatever number you want
+```
+The number of attempts is unlimited by default. 
