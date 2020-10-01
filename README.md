@@ -170,19 +170,31 @@ and it's applied **element-wise**.
 If the test fails, GradeScope will show the student a message which clarifies what went wrong.
 
 ## Q&A
-**Q**: What if my, as well as students',  script needs extra files, such as datasets, to work?
+**Q1**: What if my, as well as students',  script needs extra files, such as datasets, to work?
 
-**A**: You can list these files in the variable `extra_files`:
+**A1**: You can list these files in the variable `extra_files`:
 ```python
 extra_files = ["test_data.csv", "train_data.csv"]
 ``` 
 `gspack` expects them to be in the same directory as the solution script. It will add them to the `autograder.csv` 
 and will place them accordingly when grading students submissions. The kind of files or their extension do not matter.
 
-**Q**: How can I set the maximum number of attempts?
+**Q2**: How can I set the maximum number of attempts?
 
-**A**: By setting (anywhere in the solution):
+**A2**: By setting (anywhere in the solution):
 ```python
 number_of_attempts = 5    # or whatever number you want
 ```
 The number of attempts is unlimited by default. 
+
+**Q3**: Can gspack grade MATLAB submissions too, alongside with Python submissions? 
+
+**A3**: Yes, it can grade MATLAB submissions too. However, it requires additional steps, since Gradescope does 
+not provide any MATLAB distribution on their servers. To our experience, Total Head Count MATLAB license 
+can be used successfully to make Gradescope grading MATLAB submissions on behalf of your class. If your university
+or department has this type of license purchased, and you're willing to try using gspack with it, you can contact
+ me at aksh (at) uw (dot) edu, and I'll explain how to do this.
+
+To be clear: the instructor's solution should still be in Python, even if you plan to only support MATLAB 
+as the language in your class. gspack can not generate a Gradescope autograder archive based on a MATLAB solution and, 
+due to certain technical limitations of MATLAB Engine's API, I don't expect it to ever be able to. 
