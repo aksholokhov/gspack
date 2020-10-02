@@ -47,49 +47,86 @@ def matlab2python(a):
         raise ValueError(f"Unknown MATLAB type: {type(a)}")
 
 
-def execute(student_solution_path, language="python"):
-    student_answers = {}
-    successfully_executed = True
-    mydir = os.getcwd()
-    os.chdir(student_solution_path.parent)
+def execute():
+    # Find the student's solution file and figure out the language by its extension
+    student_solution_path = []
+    for f in os.listdir(SUBMISSION_DIR):
+        if f.endswith(".py") or f.endswith(".m"):
+            try:
+                solution_code = open(SUBMISSION_DIR / f, 'r').read()
+            except Exception as e:
+                results["output"] = f"Gradescope is unable to read your submission file: \n {str(e)} \n" \
+                                    f"This might happen if your file is damaged or improperly encoded (not in UTF-8)"
+                dump_results_and_exit(results)
+            student_solution_path.append(SUBMISSION_DIR / f)
+        else:
+            continue
 
-    try:
-        solution_code = open(student_solution_path, 'r').read()
-    except Exception as e:
-        successfully_executed = False
-        student_answers["execution_error"] = f"Gradescope is unable to read your submission file: \n {str(e)} \n" \
-                                             f"This might happen if your file is damaged or improperly encoded (not in UTF-8)"
-        return successfully_executed, student_answers
+    if len(student_solution_path) == 0:
+        results["output"] = "No student solution files found."
+        dump_results_and_exit(results)
+
+    language = None
+    if all([str(file).endswith(".py") for file in student_solution_path]):
+        language = "PYTHON"
+    elif all([str(file).endswith(".m") for file in student_solution_path]):
+        language = "MATLAB"
+    else:
+        results["output"] = f"You need to submit either only .py files or only .m files. " \
+                            f"It looks like you submitted a mix of both:" \
+                            f"\n ->".join([str(path) for path in student_solution_path])
+        dump_results_and_exit(results)
+
+    student_answers = {}
+    mydir = os.getcwd()
+    os.chdir(SUBMISSION_DIR)
 
     if language == "PYTHON":
+        if len(student_solution_path) > 1:
+            results["output"] = ("You need to submit only one file, but you submitted multiple: \n ->" +
+                                 "\n ->".join([str(path) for path in student_solution_path])
+                                 )
+            dump_results_and_exit(results)
+        student_solution_path = student_solution_path[0]
+        solution_code = open(student_solution_path, 'r').read()
         solution_module_name = os.path.basename(student_solution_path)
         solution_module = types.ModuleType(solution_module_name)
         solution_module.__file__ = os.path.abspath(student_solution_path)
         try:
             exec(solution_code, solution_module.__dict__)
         except Exception as e:
-            successfully_executed = False
-            student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
-            return successfully_executed, student_answers
+            results["output"] = f"Execution failed: \n {str(e)}"
+            dump_results_and_exit(results)
 
         for test in test_suite:
             answer_value = solution_module.__dict__.get(test["variable_name"], None)
             if answer_value is None:
-                successfully_executed = False
-                student_answers["execution_error"] = f"Variable {test['variable_name']} (and maybe others) is not assigned in your solution."
-                return successfully_executed, student_answers
+                results["output"] = f"Variable {test['variable_name']} (and maybe others) is not assigned in your solution."
+                dump_results_and_exit(results)
             else:
                 student_answers[test["variable_name"]] = answer_value
 
     elif language == "MATLAB":
         if not MATLAB_SUPPORT:
-            successfully_executed = False
-            err_msg = "MATLAB Support is disabled for this assignment, but a MATLAB file is submitted."
-            student_answers["execution_error"] = err_msg
-            return successfully_executed, student_answers
+            results["output"] = "MATLAB support is disabled for this assignment, but a MATLAB file is submitted."
+            dump_results_and_exit(results)
 
         # wrap up the MATLAB main body script as a function
+        if config.get("matlab_use_template", None) is True:
+            if all([file.name != "solution.m" for file in student_solution_path]):
+                results["output"] = f"Your main file should be called solution.m and it should be based on the template provided. \n" \
+                                    f"The files you submitted are: \n" \
+                                    f"\n ->".join([str(path) for path in student_solution_path])
+                dump_results_and_exit(results)
+
         else:
+            if len(student_solution_path) > 1:
+                results["output"] = ("You need to submit only one file, but you submitted multiple: \n ->" +
+                                     "\n ->".join([str(path) for path in student_solution_path])
+                                     )
+                dump_results_and_exit(results)
+            student_solution_path = student_solution_path[0]
+            solution_code = open(student_solution_path, 'r').read()
             solution_parts = solution_code.split("function ")
             main_script_body = solution_parts[0]
             other_functions = "" if len(solution_parts) == 1 else " ".join(
@@ -106,38 +143,39 @@ def execute(student_solution_path, language="python"):
                 student_file_dst.write(main_script_body)
                 student_file_dst.write(postfix)
                 student_file_dst.write(other_functions)
-            # Execute MATLAB solution file and convert its outputs to python-compartible representation
-            try:
-                eng = matlab.engine.start_matlab()
-            except Exception as e:
-                successfully_executed = False
-                student_answers["execution_error"]= f"MATLAB engine failed to start with the following error: \n {e}." \
-                                                    f" Please contact your instructor for assistance."
-                return successfully_executed, student_answers
-            try:
-                output = eng.solution(nargout=len(test_suite) + 1)
-                console_output = output[0]  # decide later what to do with it
-                for v, test in zip(output[1:], test_suite):
-                    student_answers[test["variable_name"]] = matlab2python(v)
-            except Exception as e:
-                successfully_executed = False
-                student_answers["execution_error"] = f"Execution failed: \n {str(e)}"
-                if str(e) == "MATLAB function cannot be evaluated":
-                    student_answers["execution_error"] += "\n Check that you suppress all console outputs " \
-                                                          "(semicolumn at the end of line), especially in loops."
-                elif str(e).endswith(
-                        ' (and maybe others) not assigned during call to "solution>student_solution".\n'):
-                    student_answers[
-                        "execution_error"] += "\n Check that you defined the aformentioned variable in your solution file."
-                return  successfully_executed, student_answers
-            finally:
+
+        # Execute MATLAB solution file and convert its outputs to python-compartible representation
+        try:
+            eng = matlab.engine.start_matlab()
+        except Exception as e:
+            successfully_executed = False
+            results["output"]= f"MATLAB failed to start with the following error: \n {e}." \
+                                f" Please contact your instructor for assistance."
+            dump_results_and_exit(results)
+        try:
+            output = eng.solution(nargout=len(test_suite) + 1)
+            # console_output = output[0]  # decide later what to do with it
+            for v, test in zip(output[1:], test_suite):
+                student_answers[test["variable_name"]] = matlab2python(v)
+        except Exception as e:
+            results["output"] = f"Execution failed: \n {str(e)}"
+            if str(e) == "MATLAB function cannot be evaluated":
+                results["output"] += "\n Check that you suppress all console outputs " \
+                                                      "(semicolumn at the end of line), especially in loops."
+            elif str(e).endswith(
+                    ' (and maybe others) not assigned during call to "solution>student_solution".\n'):
+                results["output"] += "\n Check that you defined the aformentioned variable in your solution file."
+            dump_results_and_exit(results)
+        finally:
+            if not config.get("matlab_use_template", None) is True:
                 os.remove(SUBMISSION_DIR / 'solution.m')
     else:
-        successfully_executed = False
-        student_answers["execution_error"] = f"Unsupported language: {language}"
+        results["output"] = f"Gradescope can not determine the language. \n" \
+                            f"Please check that you're submitting either .py files or .m files."
+        dump_results_and_exit(results)
     os.chdir(mydir)
 
-    return successfully_executed, student_answers
+    return student_answers
 
 
 def dump_results_and_exit(results, keep_previous_maximal_score=True):
@@ -146,9 +184,10 @@ def dump_results_and_exit(results, keep_previous_maximal_score=True):
         if len(previous_submissions) > 0:
             previous_maximal_score = max([float(submission['score']) for submission in previous_submissions])
             current_score = results.get("score", 0)
+            results["score"] = max(current_score, previous_maximal_score)
             if current_score < previous_maximal_score:
                 results['output'] += "\n The score is set to your previous maximal score."
-            results["score"] = max(current_score, previous_maximal_score)
+
     with open(RESULTS_DIR / RESULTS_JSON, "w") as f:
         json.dump(results, f, indent=4)
     exit(0)
@@ -192,7 +231,8 @@ def print_reduced_type(a):
 
 if __name__ == '__main__':
     results = {
-        "output": ""
+        "output": "",
+        "score": 0
     }
 
     # Reading submission metadata
@@ -208,38 +248,15 @@ if __name__ == '__main__':
     # get test suite
     test_suite, extra_files = pickle.load(open(SOURCE_DIR / TEST_SUITE_DUMP, "rb"))
 
-    # Find the student's solution file and figure out the language by its extension
-    student_solution_path = []
-    language = None
-    for f in os.listdir(SUBMISSION_DIR):
-        if f.endswith(".py"):
-            language = "PYTHON"
-            student_solution_path.append(SUBMISSION_DIR / f)
-        elif f.endswith(".m"):
-            language = "MATLAB"
-            student_solution_path.append(SUBMISSION_DIR / f)
-        else:
-            continue
-    if len(student_solution_path) == 0:
-        results["output"] = "No student solution files found."
-        dump_results_and_exit(results)
-    if len(student_solution_path) > 1:
-        results["output"] = ("Don't know which one is the right solution file: \n ->" +
-                             "\n ->".join([str(path) for path in student_solution_path]) +
-                             "\n You need to submit only one solution file."
-                             )
-        dump_results_and_exit(results)
-
-    student_solution_path = student_solution_path[0]
     # copy all extra files to the student's solution folder
     for f in extra_files:
         shutil.copyfile(SOURCE_DIR / f, SUBMISSION_DIR / f)
 
     # execute student's solution
-    successful_execution, student_answers_dict = execute(student_solution_path, language=language)
-    if not successful_execution:
-        results["output"] = student_answers_dict["execution_error"]
-        results["score"] = 0
+    try:
+        student_answers_dict = execute()
+    except Exception as e:
+        results["output"] = f"Execution failed for an unusual reason: {str(e)}. \n Please contact your instructor for assistance"
         dump_results_and_exit(results)
 
     # Grade student's solution results

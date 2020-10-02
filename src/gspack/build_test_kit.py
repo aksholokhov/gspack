@@ -162,10 +162,16 @@ def generate_solution(solution_path):
                             run_autograder_suffix = proxy_settings['close_tunnel']
 
             if matlab:
+                if hasattr(solution_module, 'matlab_use_template'):
+                    config['matlab_use_template'] = solution_module.matlab_use_template
+                    if solution_module.matlab_use_template:
+                        print("MATLAB is configured to be used with a template.")
+                else:
+                    config['matlab_use_template'] = False
+                config["MATLAB_support"] = 1
                 print("MATLAB support added successfully.", end='\n')
             else:
                 print("MATLAB support was NOT added, see the errors above.", end='\n')
-            config["MATLAB_support"] = 1
 
         # Create run_tests py given the prefix
         with open(solution_dir / DIST_DIR / RUN_TESTS_FILE, 'w') as run_tests_dst:
