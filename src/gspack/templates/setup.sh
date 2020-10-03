@@ -3,7 +3,7 @@
 # Install python
 apt-get install -y python python3 python3-pip python3-dev jq
 # Install gspack dependencies
-pip3 install subprocess32
+pip3 install subprocess32 numpy scipy matplotlib
 # Install solution script dependencies
 pip3 install -r /autograder/source/requirements.txt
 

@@ -63,7 +63,7 @@ def execute():
             continue
 
     if len(student_solution_path) == 0:
-        results["output"] = "No student solution files found."
+        results["output"] = "No student solution files found. Check that you submitted either .m files or .py files."
         dump_results_and_exit(results)
 
     language = None
@@ -297,7 +297,7 @@ if __name__ == '__main__':
             if type(reduced_answer) is np.ndarray:
                 if reduced_answer.shape != reduced_true_answer.shape:
                     test_result[
-                        "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {answer.shape}, " \
+                        "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {reduced_answer.shape}, " \
                                     f"but it should be {reduced_true_answer.shape}"
                     test_result["output"] += "" if test.get("hint_wrong_size",
                                                             None) is None else f"\nHint: {test['hint_wrong_size']}"
