@@ -48,7 +48,7 @@ MATLAB_FILES = [MATLAB_INSTALL_FILE, RSA_KEY, KNOWN_HOSTS_FILE, MATLAB_NETWORK_L
 
 
 def generate_requirements(filepath, output_path):
-    process = subprocess.Popen(f"pipreqs --savepath {output_path} {filepath}".split(), stdout=subprocess.PIPE,
+    process = subprocess.Popen(f"pipreqs --savepath '{output_path}' '{filepath}'".split(), stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT)
     return process.communicate()
 
@@ -116,6 +116,7 @@ def generate_solution(solution_path):
         try:
             # TODO: figure out how to parse the pipreqs' output
             generate_reqs_output = generate_requirements(solution_dir, output_path=solution_dir / DIST_DIR / REQUIREMENTS_FILE)
+            print(generate_reqs_output)
             print("Generating requirements for your solution: OK")
         except Exception as e:
             print("Generating requirements for your solution: FAILED with the error:")
