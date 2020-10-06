@@ -48,7 +48,7 @@ MATLAB_FILES = [MATLAB_INSTALL_FILE, RSA_KEY, KNOWN_HOSTS_FILE, MATLAB_NETWORK_L
 
 
 def generate_requirements(filepath, output_path):
-    process = subprocess.Popen(f"pipreqs --savepath '{output_path}' '{filepath}'".split(), stdout=subprocess.PIPE,
+    process = subprocess.Popen(["pipreqs", "--savepath", f"{output_path}", f"{filepath}"], stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT)
     return process.communicate()
 
@@ -90,6 +90,9 @@ def generate_solution(solution_path):
             print(f"-> {test['test_name']}: ERROR: variable {test['variable_name']} is set to be checked"
                   f" but it's not defined after the solution finishes its execution.")
             return False
+        if test.get('score', None) is None:
+            print(f"-> {test['test_name']}: ERROR: score is missing")
+            return False
         else:
             print(f"-> {test['test_name']}: OK")
             test["value"] = solution_module.__getattribute__(test["variable_name"])
@@ -114,10 +117,9 @@ def generate_solution(solution_path):
             print(f"-> {file}: OK")
         # pipreqs package scans the solution and generates the list of (non-standard) Python packages used.
         try:
-            # TODO: figure out how to parse the pipreqs' output
+            print("Generating requirements for your solution:")
             generate_reqs_output = generate_requirements(solution_dir, output_path=solution_dir / DIST_DIR / REQUIREMENTS_FILE)
-            print(generate_reqs_output)
-            print("Generating requirements for your solution: OK")
+            print(generate_reqs_output[0])
         except Exception as e:
             print("Generating requirements for your solution: FAILED with the error:")
             print(e)

@@ -114,9 +114,9 @@ def execute():
         # wrap up the MATLAB main body script as a function
         if config.get("matlab_use_template", None) is True:
             if all([file.name != "solution.m" for file in student_solution_path]):
-                results["output"] = f"Your main file should be called solution.m and it should be based on the template provided. \n" \
-                                    f"The files you submitted are: \n" \
-                                    f"\n ->".join([str(path) for path in student_solution_path])
+                results["output"] = (f"Your main file should be called solution.m and it should be based on the template provided. \n" +
+                                    f"The files you submitted are: \n" +
+                                    f"\n ->".join([str(path) for path in student_solution_path]))
                 dump_results_and_exit(results)
 
         else:
