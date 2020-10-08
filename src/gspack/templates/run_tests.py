@@ -179,14 +179,15 @@ def execute():
 
 
 def dump_results_and_exit(results, keep_previous_maximal_score=True):
+    current_score = results.get("score", 0)
+    results['output'] += f"\n Your score for this submission is {current_score}."
     if keep_previous_maximal_score:
         previous_submissions = submission_metadata['previous_submissions']
         if len(previous_submissions) > 0:
             previous_maximal_score = max([float(submission['score']) for submission in previous_submissions])
-            current_score = results.get("score", 0)
             results["score"] = max(current_score, previous_maximal_score)
             if current_score < previous_maximal_score:
-                results['output'] += "\n The score is set to your previous maximal score."
+                results['output'] += f"\n The score is set to your previous maximal score of {previous_maximal_score}."
 
     with open(RESULTS_DIR / RESULTS_JSON, "w") as f:
         json.dump(results, f, indent=4)
