@@ -37,8 +37,9 @@ test_suite = [
     }
 ]
 
-number_of_attempts = 3
+# number_of_attempts = 3
 
 extra_files = ["matrix.csv"]
 
 matlab_credentials = "~/Storage/repos/gspack_uw_amath_matlab_credentials"
+matlab_use_template = True

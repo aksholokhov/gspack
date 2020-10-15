@@ -5,7 +5,7 @@ Programming Assignment Packager for GradeScope Auto Grader.
 `gspack` converts your programming assignment solution into a GradeScope Auto-Grader compatible archive. 
 
 **TL;DR:** *If you just want to make GradeScope checking correctness of certain values in students coding solutions, and
- you don't have time to learn how to create GradeScope Autograder archives -- this tool is for you. 
+ you don't have time to learn how to create Gradescope Autograder archives -- this tool is for you. 
  However, if you want to write actual test suites, which test speed/correctness of students functions on arbitrary input -- [gradescope-utils](https://github.com/gradescope/gradescope-utils) is what you need*.
 
 This tool
@@ -141,11 +141,17 @@ test_suite = [
         "description": "<description>",             # _Optional_ string. Description of the test, appears in the test title.
         "rtol": <rtol>,                             # _Optional_ float, default = 1e-8, relative tolerance.
         "atol": <atol>,                             # _Optional_ float, default = 1e-5, absolute tolerance.
+        
+        # Language-agnostic hints
         "hint_not_defined": "<sting>",              # _Optional_ string, appears if <variable_name> is not defined in the student's solution.
         "hint_wrong_type": "<string>",              # _Optional_ string, appears if <variable_name> is defined, but its type is wrong
         "hint_wrong_size": "<string>",              # _Optional_ string, appears if the <variable_name> has wrong shape (for matrices)
         "hint_nans": "<string>",                    # _Optional_ string, appears if the <variable_name> contains NaNs
         "hint_tolerance": "<string>"                # _Optional_ string, appears if the <variable_name> does not pass the tolerance requirements.
+        
+        # Language-specific hints are formed via adding suffix "_python" or "_matlab". For example:
+        "hint_wrong_size_python": "<string>",       # _Optional_ string, appears only for Python submissions 
+                                                    # if the <variable_name> has wrong shape (for matrices)
     }
 ]
 ```
@@ -169,31 +175,52 @@ and it's applied **element-wise**.
 
 If the test fails, GradeScope will show the student a message which clarifies what went wrong.
 
-## Q&A
-**Q1**: What if my, as well as students',  script needs extra files, such as datasets, to work?
+## Q&A and extra capabilities
+### 1) Extra files
+**Q**: What if my, as well as students',  script needs **extra files**, such as datasets, to work?
 
-**A1**: You can list these files in the variable `extra_files`:
+**A**: You can list these files in the variable `extra_files`:
 ```python
 extra_files = ["test_data.csv", "train_data.csv"]
 ``` 
 `gspack` expects them to be in the same directory as the solution script. It will add them to the `autograder.csv` 
 and will place them accordingly when grading students submissions. The kind of files or their extension do not matter.
 
-**Q2**: How can I set the maximum number of attempts?
+### 2) Maximum number of attempts
+**Q**: How can I set the **maximum number of attempts**?
 
-**A2**: By setting (anywhere in the solution):
+**A**: By setting (anywhere in the solution):
 ```python
 number_of_attempts = 5    # or whatever number you want
 ```
 The number of attempts is unlimited by default. 
 
-**Q3**: Can gspack grade MATLAB submissions too, alongside with Python submissions? 
+The **"Test Student"** user is always excused from this limit 
+to allow the instructor to do as many test submissions as they need. 
 
-**A3**: Yes, it can grade MATLAB submissions too. However, it requires additional steps, since Gradescope does 
+### 3) Total score and even distribution of points
+**Q:** Can I specify the **total score** for my assignment instead of assigning the score to every 
+submission individually?
+
+**A:** Yes: you just need to set 
+```python
+total_score = 50 # or anything
+```
+and `gspack` will distribute these points evenly among your rubric. Note that this is an "either-or" option: you can 
+either define `total_score` OR all individual test's scores. Defining them both will result in an error
+ (`gspack` will explain what is wrong).
+
+### 4) MATLAB
+
+**Q**: Can gspack grade **MATLAB submissions** too, alongside with Python submissions? 
+
+**A**: Yes, it can grade MATLAB submissions too. However, it requires additional steps, since Gradescope does 
 not provide any MATLAB distribution on their servers. To our experience, Total Head Count MATLAB license 
 can be used successfully to make Gradescope grading MATLAB submissions on behalf of your class. If your university
 or department has this type of license purchased, and you're willing to try using gspack with it, you can contact
  me at aksh (at) uw (dot) edu, and I'll explain how to do this.
+ 
+*NB: **UW AMATH Instructors** -- see the **MATLAB instruction** in the credentials repo's README*.
 
 To be clear: the instructor's solution should still be in Python, even if you plan to only support MATLAB 
 as the language in your class. gspack can not generate a Gradescope autograder archive based on a MATLAB solution and, 

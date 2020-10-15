@@ -117,7 +117,7 @@ def generate_solution(solution_path):
         actual_total_score += float(test['score'])
         print(f"-> {test['test_name']}: OK")
     # Generating the auto grader archive
-    print("The total number of points is %.2d." % actual_total_score)
+    print("The total number of points is %.2d" % actual_total_score)
     print("The test_suite looks good. Generating the archive:")
     config = {
         "MATLAB_support": 0,
