@@ -53,9 +53,11 @@ def execute():
     for f in os.listdir(SUBMISSION_DIR):
         if f.endswith(".py") or f.endswith(".m"):
             try:
-                solution_code = open(SUBMISSION_DIR / f, 'r').read()
+                _ = open(SUBMISSION_DIR / f, 'r').read()
+                # we don't do anything with the output because at this point we just want to check
+                # that the file is readable.
             except Exception as e:
-                results["output"] = f"Gradescope is unable to read your submission file: \n {str(e)} \n" \
+                results["output"] += f"Gradescope is unable to read your submission file: \n {str(e)} \n" \
                                     f"This might happen if your file is damaged or improperly encoded (not in UTF-8)"
                 dump_results_and_exit(results)
             student_solution_path.append(SUBMISSION_DIR / f)
@@ -63,16 +65,16 @@ def execute():
             continue
 
     if len(student_solution_path) == 0:
-        results["output"] = "No student solution files found. Check that you submitted either .m files or .py files."
+        results["output"] += "No student solution files found. Check that you submitted either .m files or .py files."
         dump_results_and_exit(results)
 
     language = None
     if all([str(file).endswith(".py") for file in student_solution_path]):
-        language = "PYTHON"
+        language = "python"
     elif all([str(file).endswith(".m") for file in student_solution_path]):
-        language = "MATLAB"
+        language = "matlab"
     else:
-        results["output"] = f"You need to submit either only .py files or only .m files. " \
+        results["output"] += f"You need to submit either only .py files or only .m files. " \
                             f"It looks like you submitted a mix of both:" \
                             f"\n ->".join([str(path) for path in student_solution_path])
         dump_results_and_exit(results)
@@ -81,9 +83,9 @@ def execute():
     mydir = os.getcwd()
     os.chdir(SUBMISSION_DIR)
 
-    if language == "PYTHON":
+    if language == "python":
         if len(student_solution_path) > 1:
-            results["output"] = ("You need to submit only one file, but you submitted multiple: \n ->" +
+            results["output"] += ("You need to submit only one file, but you submitted multiple: \n ->" +
                                  "\n ->".join([str(path) for path in student_solution_path])
                                  )
             dump_results_and_exit(results)
@@ -95,33 +97,33 @@ def execute():
         try:
             exec(solution_code, solution_module.__dict__)
         except Exception as e:
-            results["output"] = f"Execution failed: \n {str(e)}"
+            results["output"] += f"Execution failed: \n {str(e)} \n"
             dump_results_and_exit(results)
 
         for test in test_suite:
             answer_value = solution_module.__dict__.get(test["variable_name"], None)
             if answer_value is None:
-                results["output"] = f"Variable {test['variable_name']} (and maybe others) is not assigned in your solution."
+                results["output"] += f"Variable {test['variable_name']} (and maybe others) is not assigned in your solution."
                 dump_results_and_exit(results)
             else:
                 student_answers[test["variable_name"]] = answer_value
 
-    elif language == "MATLAB":
+    elif language == "matlab":
         if not MATLAB_SUPPORT:
-            results["output"] = "MATLAB support is disabled for this assignment, but a MATLAB file is submitted."
+            results["output"] += "MATLAB support is disabled for this assignment, but a MATLAB file is submitted."
             dump_results_and_exit(results)
 
         # wrap up the MATLAB main body script as a function
         if config.get("matlab_use_template", None) is True:
             if all([file.name != "solution.m" for file in student_solution_path]):
-                results["output"] = (f"Your main file should be called solution.m and it should be based on the template provided. \n" +
+                results["output"] += (f"Your main file should be called solution.m and it should be based on the template provided. \n" +
                                     f"The files you submitted are: \n" +
                                     f"\n ->".join([str(path) for path in student_solution_path]))
                 dump_results_and_exit(results)
 
         else:
             if len(student_solution_path) > 1:
-                results["output"] = ("You need to submit only one file, but you submitted multiple: \n ->" +
+                results["output"] += ("You need to submit only one file, but you submitted multiple: \n ->" +
                                      "\n ->".join([str(path) for path in student_solution_path])
                                      )
                 dump_results_and_exit(results)
@@ -149,7 +151,7 @@ def execute():
             eng = matlab.engine.start_matlab()
         except Exception as e:
             successfully_executed = False
-            results["output"]= f"MATLAB failed to start with the following error: \n {e}." \
+            results["output"] += f"MATLAB failed to start with the following error: \n {e}." \
                                 f" Please contact your instructor for assistance."
             dump_results_and_exit(results)
         try:
@@ -158,7 +160,7 @@ def execute():
             for v, test in zip(output[1:], test_suite):
                 student_answers[test["variable_name"]] = matlab2python(v)
         except Exception as e:
-            results["output"] = f"Execution failed: \n {str(e)}"
+            results["output"] += f"Execution failed: \n {str(e)}"
             if str(e) == "MATLAB function cannot be evaluated":
                 results["output"] += "\n Check that you suppress all console outputs " \
                                                       "(semicolumn at the end of line), especially in loops."
@@ -175,19 +177,25 @@ def execute():
         dump_results_and_exit(results)
     os.chdir(mydir)
 
-    return student_answers
+    return language, student_answers
 
 
-def dump_results_and_exit(results, keep_previous_maximal_score=True):
+def dump_results_and_exit(results, keep_previous_maximal_score=True, print_score=True):
     current_score = results.get("score", 0)
-    results['output'] += f"\n Your score for this submission is {current_score}."
+    if print_score:
+        results['output'] += f"\n Your score for this submission is {current_score:.2f}."
     if keep_previous_maximal_score:
         previous_submissions = submission_metadata['previous_submissions']
         if len(previous_submissions) > 0:
-            previous_maximal_score = max([float(submission['score']) for submission in previous_submissions])
-            results["score"] = max(current_score, previous_maximal_score)
+            previous_maximal_score = round(max([float(submission['score']) for submission in previous_submissions]), 2)
+            results["score"] = round(max(current_score, previous_maximal_score), 2)
             if current_score < previous_maximal_score:
-                results['output'] += f"\n The score is set to your previous maximal score of {previous_maximal_score}."
+                results['output'] += f"\n The score is set to your previous maximal score of {previous_maximal_score:.2f}."
+            total_achievable_score = round(config.get("total_score", None), 2)
+            if total_achievable_score is not None:
+                if total_achievable_score <= previous_maximal_score:
+                    results['output'] = "\n You already achieved maximum score possible."
+                    results['tests'] = []
 
     with open(RESULTS_DIR / RESULTS_JSON, "w") as f:
         json.dump(results, f, indent=4)
@@ -230,6 +238,16 @@ def print_reduced_type(a):
     else:
         return str(type(a))
 
+
+def get_hint(test, prefix, language):
+    if test.get(prefix + "_" + language, None) is not None:
+        return str(test.get(prefix + "_" + language, None))
+    elif test.get(prefix, None) is not None:
+        return str(test.get(prefix, None))
+    else:
+        return ""
+
+
 if __name__ == '__main__':
     results = {
         "output": "",
@@ -242,9 +260,12 @@ if __name__ == '__main__':
 
     number_of_attempts = config.get("number_of_attempts", None)
     if number_of_attempts is not None:
-        if len(submission_metadata['previous_submissions']) > number_of_attempts:
-            results["output"] = f"You've already used all {number_of_attempts} allowed attempts."
-            dump_results_and_exit(results)
+        number_of_used_attempts = len(submission_metadata['previous_submissions'])
+        if number_of_used_attempts >= number_of_attempts:
+            results["output"] += f"You've already used all {number_of_attempts} allowed attempts."
+            dump_results_and_exit(results, print_score=False)
+        else:
+            results["output"] += f"This is your attempt {number_of_used_attempts + 1} out of {number_of_attempts}. \n"
 
     # get test suite
     test_suite, extra_files = pickle.load(open(SOURCE_DIR / TEST_SUITE_DUMP, "rb"))
@@ -255,10 +276,10 @@ if __name__ == '__main__':
 
     # execute student's solution
     try:
-        student_answers_dict = execute()
+        language, student_answers_dict = execute()
     except Exception as e:
-        results["output"] = f"Execution failed for an unusual reason: {str(e)}. \n Please contact your instructor for assistance"
-        dump_results_and_exit(results)
+        results["output"] = f"Execution failed for an unusual reason: {str(e)}. \n Please contact your instructor for assistance."
+        dump_results_and_exit(results, print_score=False)
 
     # Grade student's solution results
     results["tests"] = []
@@ -277,9 +298,8 @@ if __name__ == '__main__':
         results["tests"].append(test_result)
         answer = student_answers_dict.get(test["variable_name"], None)
         if answer is None:
-            test_result["output"] = (f"Variable {test['variable_name']} is not defined in your solution file." +
-                                     "" if test.get("hint_not_defined",
-                                                    None) is None else f"\nHint: {test['hint_not_defined']}")
+            test_result["output"] = (f"Variable {test['variable_name']} is not defined in your solution file. " +
+                                     get_hint(test, "hint_not_defined", language))
             continue
 
         reduced_answer = reduce_type(answer)
@@ -289,9 +309,8 @@ if __name__ == '__main__':
                 type(reduced_answer) in (float, int) and (type(reduced_true_answer) in (float, int)))):
             test_result[
                 "output"] = f"Wrong answer type: the type of your variable {test['variable_name']} is {print_reduced_type(reduced_answer)}, " \
-                            f"but it should be {print_reduced_type(reduced_true_answer)}"
-            test_result["output"] += "" if test.get("hint_wrong_type",
-                                                    None) is None else f"\nHint: {test['hint_wrong_type']}"
+                            f"but it should be {print_reduced_type(reduced_true_answer)}. "
+            test_result["output"] += get_hint(test, "hint_wrong_type", language)
 
             continue
         if (type(reduced_answer) is np.ndarray) or (type(reduced_answer) is float):
@@ -299,26 +318,26 @@ if __name__ == '__main__':
                 if reduced_answer.shape != reduced_true_answer.shape:
                     test_result[
                         "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {reduced_answer.shape}, " \
-                                    f"but it should be {reduced_true_answer.shape}"
-                    test_result["output"] += "" if test.get("hint_wrong_size",
-                                                            None) is None else f"\nHint: {test['hint_wrong_size']}"
+                                    f"but it should be {reduced_true_answer.shape}. "
+                    test_result["output"] += get_hint(test, "hint_wrong_size", language)
                     continue
             if np.isnan(reduced_answer).any():
-                test_result["output"] = f"Your variable {test['variable_name']} contains NaNs."
-                test_result["output"] += "" if test.get("hint_nans", None) is None else f"\nHint: {test['hint_nans']}"
+                test_result["output"] = f"Your variable {test['variable_name']} contains NaNs. "
+                test_result["output"] += get_hint(test, "hint_nans", language)
                 continue
 
             rtol = test.get("rtol", None) or 1e-5
             atol = test.get("atol", None) or 1e-8
             if not np.allclose(reduced_answer, reduced_true_answer, rtol=rtol, atol=atol):
-                test_result["output"] = f"Your answer is not within tolerance from the right answer."
-                test_result["output"] += "" if test.get("hint_tolerance",
-                                                        None) is None else f"\nHint: {test['hint_tolerance']}"
+                test_result["output"] = f"Your answer is not within tolerance from the right answer. "
+                test_result["output"] += get_hint(test, "hint_tolerance", language)
                 continue
+
         elif type(reduced_answer) == str:
             if not reduced_answer.lower().strip() == reduced_true_answer.lower().strip():
-                test_result["output"] = f"Your answer does not match the right answer."
+                test_result["output"] = f"Your answer does not match the right answer. "
                 continue
+
         test_result["output"] = "Correct."
         test_result["score"] = test["score"]
         total_score += test["score"]

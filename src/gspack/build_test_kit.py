@@ -84,20 +84,40 @@ def generate_solution(solution_path):
     if type(test_suite) is not list:
         print(f"test_suite is defined as {type(test_suite)} but it should be list.")
         return False
+    score_per_test = None
+    total_score = None
+    if hasattr(solution_module, 'total_score'):
+        total_score = solution_module.total_score
+        try:
+            total_score = float(total_score)
+        except Exception as e:
+            print("Total score should be a number. Check the type of the total_score variable.")
+        score_per_test = total_score / len(test_suite)
+
     print("Found the test suite configuration:")
+    actual_total_score = 0
     for test in test_suite:
         if not hasattr(solution_module, test['variable_name']):
             print(f"-> {test['test_name']}: ERROR: variable {test['variable_name']} is set to be checked"
                   f" but it's not defined after the solution finishes its execution.")
             return False
-        if test.get('score', None) is None:
-            print(f"-> {test['test_name']}: ERROR: score is missing")
-            return False
-        else:
-            print(f"-> {test['test_name']}: OK")
+        if (score_per_test is None) ^ (test.get('score', None) is None):
             test["value"] = solution_module.__getattribute__(test["variable_name"])
-
+            if test.get('score', None) is None:
+                test['score'] = score_per_test
+        else:
+            if (test.get('score', None) is None) and (score_per_test is None):
+                print(f"-> {test['test_name']}: ERROR: score is missing")
+                return False
+            else:
+                print(f"-> {test['test_name']}: ERROR: both total_score and this particular test's score are defined."
+                      f"You need to define either one global score to assign points evenly,"
+                      f" or to define all test's scores manually. ")
+                return False
+        actual_total_score += float(test['score'])
+        print(f"-> {test['test_name']}: OK")
     # Generating the auto grader archive
+    print("The total number of points is %.2d." % actual_total_score)
     print("The test_suite looks good. Generating the archive:")
     config = {
         "MATLAB_support": 0,
@@ -207,6 +227,7 @@ def generate_solution(solution_path):
             extra_files = []
 
         # Checking if the number of submission attempts is set to be limited
+        config['total_score'] = actual_total_score
         if hasattr(solution_module, 'number_of_attempts'):
             config['number_of_attempts'] = solution_module.number_of_attempts
             print(f"Number of attempts: {solution_module.number_of_attempts}")
