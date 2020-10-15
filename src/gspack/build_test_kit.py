@@ -25,7 +25,7 @@ import pickle
 import click
 import json
 
-from gspack.__about__ import __author__, __email__
+from gspack.__about__ import __author__, __email__, __version__
 
 DIST_DIR = Path("dist")
 TEMPLATES_DIR = Path("templates")
@@ -254,6 +254,9 @@ def generate_solution(solution_path):
 
 @click.command(
     help="Genreates archive for gradescope autograder"
+)
+@click.version_option(
+    version=__version__
 )
 # TODO: move it to the default argument
 @click.option(
