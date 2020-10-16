@@ -261,11 +261,14 @@ if __name__ == '__main__':
     number_of_attempts = config.get("number_of_attempts", None)
     if number_of_attempts is not None:
         number_of_used_attempts = len(submission_metadata['previous_submissions'])
-        if number_of_used_attempts >= number_of_attempts:
-            results["output"] += f"You've already used all {number_of_attempts} allowed attempts."
-            dump_results_and_exit(results, print_score=False)
+        if submission_metadata["users"][0]["name"] == "Test Student":
+            results["output"] += f"Submitted as Test Student (unlimited attempts)"
         else:
-            results["output"] += f"This is your attempt {number_of_used_attempts + 1} out of {number_of_attempts}. \n"
+            if number_of_used_attempts >= number_of_attempts:
+                results["output"] += f"You've already used all {number_of_attempts} allowed attempts."
+                dump_results_and_exit(results, print_score=False)
+            else:
+                results["output"] += f"This is your attempt {number_of_used_attempts + 1} out of {number_of_attempts}. \n"
 
     # get test suite
     test_suite, extra_files = pickle.load(open(SOURCE_DIR / TEST_SUITE_DUMP, "rb"))
