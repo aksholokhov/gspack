@@ -197,6 +197,7 @@ The number of attempts is unlimited by default.
 
 The **"Test Student"** user is always excused from this limit 
 to allow the instructor to do as many test submissions as they need. 
+There is no specific email for **Test Student**: the only thing checked is that the name is "Test Student".
 
 ### 3) Total score and even distribution of points
 **Q:** Can I specify the **total score** for my assignment instead of assigning the score to every 
