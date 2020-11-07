@@ -7,7 +7,7 @@ __title__ = "gspack"
 __summary__ = "Assignment Packager for the GradeScope Autograder."
 __uri__ = "https://github.com/aksholokhov/gspack"
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 __author__ = "Aleksei Sholokhov"
 __email__ = "aksh@uw.edu"
