@@ -205,11 +205,8 @@ def dump_results_and_exit(results, keep_previous_maximal_score=True, print_score
 def reduce_type(a):
     if isinstance(a, numbers.Number):
         return float(a)
-    elif isinstance(a, np.ndarray):
-        if a.flatten().shape == (1,):
-            return float(a.flatten()[0])
-    elif (isinstance(a, list) or isinstance(a, set)) and len(a) == 1:
-          return np.array(a)[0]
+    elif isinstance(a, np.ndarray) and a.flatten().shape == (1,):
+        return float(a.flatten()[0])
     elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
         try:
             res = np.array(a, dtype=float)
@@ -223,16 +220,11 @@ def reduce_type(a):
 def print_reduced_type(a):
     if isinstance(a, numbers.Number):
         return "number"
-    elif ((isinstance(a, np.ndarray) and a.flatten().shape == (1,))
-          or (isinstance(a, list) and len(a) == 1)
-          or (isinstance(a, set) and len(a) == 1)):
-        return "number"
     elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
-        res = np.array(a, dtype=float)
-        # if len(res.shape) == 2:
-        #     if res.shape[0] == 1:
-        #         # make all row vectors (1, x) to be arrays(x, )
-        #         res = res[0, :]
+        try:
+            res = np.array(a, dtype=float)
+        except Exception as e:
+            return str(type(a))
         return f"matrix of shape {res.shape}"
     elif isinstance(a, str):
         return "string"
