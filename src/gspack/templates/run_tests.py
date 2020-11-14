@@ -211,7 +211,12 @@ def reduce_type(a):
     elif (isinstance(a, list) or isinstance(a, set)) and len(a) == 1:
           return np.array(a)[0]
     elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
-        return np.array(a, dtype=float)
+        try:
+            res = np.array(a, dtype=float)
+        except Exception as e:
+            print(f"Conversion error to numpy array: {e}. \n Object: {a}")
+            res = a
+        return res
     else:
         return a
 
@@ -236,12 +241,14 @@ def print_reduced_type(a):
 
 
 def get_hint(test, prefix, language):
+    result = "\nHint: "
     if test.get(prefix + "_" + language, None) is not None:
-        return str(test.get(prefix + "_" + language, None))
+        result += str(test.get(prefix + "_" + language, None))
     elif test.get(prefix, None) is not None:
-        return str(test.get(prefix, None))
+        result += str(test.get(prefix, None))
     else:
-        return ""
+        result = ""
+    return result
 
 
 if __name__ == '__main__':
@@ -313,13 +320,21 @@ if __name__ == '__main__':
 
             continue
         if (type(reduced_answer) is np.ndarray) or (type(reduced_answer) is float):
-            if type(reduced_answer) is np.ndarray:
+            if (type(reduced_answer) is np.ndarray) and (type(reduced_true_answer) is np.ndarray):
                 if reduced_answer.shape != reduced_true_answer.shape:
                     test_result[
                         "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {reduced_answer.shape}, " \
                                     f"but it should be {reduced_true_answer.shape}. "
                     test_result["output"] += get_hint(test, "hint_wrong_size", language)
                     continue
+
+                if reduced_answer.dtype != reduced_true_answer.dtype:
+                    test_result[
+                        "output"] = f"Wrong data type of the array: the data type of your array {test['variable_name']} is {reduced_answer.dtype}, " \
+                                    f"but it should be {reduced_true_answer.dtype}. "
+                    test_result["output"] += get_hint(test, "hint_wrong_type", language)
+                    continue
+
             if np.isnan(reduced_answer).any():
                 test_result["output"] = f"Your variable {test['variable_name']} contains NaNs. "
                 test_result["output"] += get_hint(test, "hint_nans", language)
