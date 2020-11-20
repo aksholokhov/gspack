@@ -256,7 +256,12 @@ if __name__ == '__main__':
     number_of_attempts = config.get("number_of_attempts", None)
     if number_of_attempts is not None:
         number_of_used_attempts = len(submission_metadata['previous_submissions'])
-        if submission_metadata["users"][0]["name"] == "Test Student":
+        test_student = False
+        try:
+            test_student = submission_metadata["users"][0]["name"] == "Test Student"
+        except Exception as e:
+            print(f"Can't access student's name: {e}")
+        if test_student:
             results["output"] += f"Submitted as Test Student (unlimited attempts)"
         else:
             if number_of_used_attempts >= number_of_attempts:
