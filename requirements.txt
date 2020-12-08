@@ -2,3 +2,5 @@ pipreqs
 subprocess32
 click
 numpy
+ipython
+nbformat

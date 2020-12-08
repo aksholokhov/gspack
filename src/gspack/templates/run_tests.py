@@ -1,12 +1,108 @@
 import json
-from pathlib import Path
-import pickle
 import types
 import os
-import numpy as np
-import shutil
-
+import sys
 import numbers
+
+import numpy as np
+import pickle
+import shutil
+from pathlib import Path
+
+import sys, signal, io
+
+from IPython import get_ipython
+from nbformat import read
+from IPython.core.interactiveshell import InteractiveShell
+from matplotlib import pyplot as plt
+from contextlib import contextmanager
+
+@contextmanager
+def redirected_output(new_stdout=None, new_stderr=None):
+    save_stdout = sys.stdout
+    save_stderr = sys.stderr
+    if new_stdout is not None:
+        sys.stdout = new_stdout
+    if new_stderr is not None:
+        sys.stderr = new_stderr
+    try:
+        yield None
+    finally:
+        sys.stdout = save_stdout
+        sys.stderr = save_stderr
+
+
+class NotebookLoader(object):
+    """Module Loader for Jupyter Notebooks"""
+
+    def __init__(self):
+        self.shell = InteractiveShell.instance()
+
+    def load_jupyter_module(self, path):
+        """import a notebook as a module"""
+        # load the notebook object
+        with io.open(path, 'r', encoding='utf-8') as f:
+            nb = read(f, 4)
+
+        # create the module and add it to sys.modules
+        # if name in sys.modules:
+        #    return sys.modules[name]
+        fullname = str(path).split('/')[-1].split('.')[0]
+        mod = types.ModuleType(fullname)
+        mod.__file__ = path
+        mod.__loader__ = self
+        mod.__dict__['get_ipython'] = get_ipython
+        sys.modules[fullname] = mod
+
+        # extra work to ensure that magics that would affect the user_ns
+        # actually affect the notebook module's ns
+        save_user_ns = self.shell.user_ns
+        self.shell.user_ns = mod.__dict__
+        with open("log.txt", 'w') as f:
+            try:
+                code_cells_counter = 0
+                for cell in nb.cells:
+                    if cell.cell_type == 'code':
+                        code_cells_counter += 1
+                        # transform the input to executable Python
+                        code = self.shell.input_transformer_manager.transform_cell(cell.source)
+                        # run the code in themodule
+                        try:
+                            with timeout(5000):
+                                with redirected_output(new_stdout=f):
+                                    exec(code, mod.__dict__)
+                        except Exception as e:
+                            print("    Exception in code cell %d: %s" % (code_cells_counter, e))
+                        plt.close()
+            except Exception as e:
+                raise e
+            finally:
+                self.shell.user_ns = save_user_ns
+        return mod
+
+
+@contextmanager
+def timeout(time):
+    # Register a function to raise a TimeoutError on the signal.
+    signal.signal(signal.SIGALRM, raise_timeout)
+    # Schedule the signal to be sent after ``time``.
+    signal.alarm(time)
+
+    try:
+        yield
+    except TimeoutError:
+        raise Exception("Timeout")
+    except Exception as e:
+        raise e
+    finally:
+        # Unregister the signal so it won't be triggered
+        # if the timeout is not reached.
+        signal.signal(signal.SIGALRM, signal.SIG_IGN)
+
+
+def raise_timeout(signum, frame):
+    raise TimeoutError
+
 
 # HOME_DIR = Path("/Users/aksh/Storage/repos/gspack/examples/python101/autograder")
 HOME_DIR = Path("/autograder")
@@ -46,12 +142,11 @@ def matlab2python(a):
     else:
         raise ValueError(f"Unknown MATLAB type: {type(a)}")
 
-
 def execute():
     # Find the student's solution file and figure out the language by its extension
     student_solution_path = []
     for f in os.listdir(SUBMISSION_DIR):
-        if f.endswith(".py") or f.endswith(".m"):
+        if f.endswith(".py") or f.endswith(".ipynb") or f.endswith(".m"):
             try:
                 _ = open(SUBMISSION_DIR / f, 'r').read()
                 # we don't do anything with the output because at this point we just want to check
@@ -73,6 +168,8 @@ def execute():
         language = "python"
     elif all([str(file).endswith(".m") for file in student_solution_path]):
         language = "matlab"
+    elif all([[str(file).endswith(".ipynb") for file in student_solution_path]]):
+        language = "jupyter"
     else:
         results["output"] += f"You need to submit either only .py files or only .m files. " \
                             f"It looks like you submitted a mix of both:" \
@@ -99,6 +196,18 @@ def execute():
         except Exception as e:
             results["output"] += f"Execution failed: \n {str(e)} \n"
             dump_results_and_exit(results)
+
+        for test in test_suite:
+            answer_value = solution_module.__dict__.get(test["variable_name"], None)
+            if answer_value is None:
+                results["output"] += f"Variable {test['variable_name']} (and maybe others) is not assigned in your solution."
+                dump_results_and_exit(results)
+            else:
+                student_answers[test["variable_name"]] = answer_value
+
+    elif language == "jupyter":
+        loader = NotebookLoader()
+        solution_module = loader.load_jupyter_module(student_solution_path[0])
 
         for test in test_suite:
             answer_value = solution_module.__dict__.get(test["variable_name"], None)

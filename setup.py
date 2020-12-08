@@ -15,12 +15,7 @@ if __name__ == "__main__":
     with (base_dir / "README.md").open() as f:
         long_description = f.read()
 
-    install_requirements = [
-        'pipreqs',
-        'subprocess32',
-        'click',
-        'numpy'
-    ]
+    install_requirements = [t.strip() for t in open("requirements.txt", 'r').readlines()]
 
     test_requirements = [
         'pytest',
