@@ -88,7 +88,7 @@ class Executor:
         if platform is None:
             raise ExecutionIncomplete(f"Can't recognize the language platform for the file {file_path}")
         my_dir = os.getcwd()
-        os.chdir(file_path)
+        os.chdir(file_path.parent)
         try:
             if platform == "matlab":
                 output = self.execute_matlab(file_path)
@@ -113,7 +113,7 @@ class Executor:
             with timeout(self.timeout):
                 output = execute_matlab_ext(file_path, matlab_settings=self.matlab_config)
         except TimeoutError:
-            return ExecutorFailure("Code did not finish before timeout.")
+            return ExecutionIncomplete("Code did not finish before timeout.")
         return output
 
     def execute_python(self, file_path: Path):

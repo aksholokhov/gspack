@@ -10,7 +10,7 @@ def execute_matlab(file_path, matlab_settings):
     except Exception as e:
         raise ExecutorFailure(f"MATLAB Engine failed to start with the following error: \n {e}.")
     try:
-        return exec(f"eng.{file_path.stem}({matlab_settings['nargout']})")
+        return eval(f"eng.{file_path.stem}(nargout={matlab_settings['nargout']})")
     except Exception as e:
         err_msg = f"Execution failed: \n {str(e)}"
         if str(e) == "MATLAB function cannot be evaluated":
