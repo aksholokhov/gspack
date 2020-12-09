@@ -1,2 +1,2 @@
 # Run the testing script
-python3 /autograder/source/run_tests.py
+python3 /autograder/source/run_grader.py

@@ -203,6 +203,15 @@ def generate_solution(solution_path):
             with open(program_dir / TEMPLATES_DIR / RUN_TESTS_FILE, 'r') as run_tests_src:
                 run_tests_dst.write(run_tests_src.read())
 
+        # files to take
+        files_to_take = ["run_grader.py", "executor.py", "matlab_executor.py", "helpers.py"]
+        for f in files_to_take:
+            with open(solution_dir / DIST_DIR / f, 'w') as run_tests_dst:
+                if run_tests_py_prefix is not None:
+                    run_tests_dst.write(run_tests_py_prefix + "\n")
+                with open(program_dir / f, 'r') as run_tests_src:
+                    run_tests_dst.write(run_tests_src.read())
+
         # Create run_autograder file given the prefix and suffix
         with open(solution_dir / DIST_DIR / RUN_AUTOGRADER_FILE, 'w') as run_autograder_dest:
             run_autograder_dest.write("#!/usr/bin/env bash \n")

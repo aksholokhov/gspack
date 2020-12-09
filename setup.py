@@ -41,7 +41,7 @@ if __name__ == "__main__":
         package_data = {
             "gspack": ["src/gspack/templates/run_autograder",
                        "src/gspack/templates/run_tests.py",
-                       "src/gspack/templates/setup.sh"
+                       "src/gspack/templates/setup.sh",
                        ]
         },
         include_package_data=True,
