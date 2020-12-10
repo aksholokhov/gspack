@@ -1,5 +1,5 @@
 import matlab.engine
-from executor import ExecutionIncomplete, ExecutorFailure
+from gspack.main import UserFailure, GspackFailure
 
 
 def execute_matlab(file_path, matlab_settings):
@@ -8,9 +8,9 @@ def execute_matlab(file_path, matlab_settings):
         # it's actually used below: see exec command
         eng = matlab.engine.start_matlab()
     except Exception as e:
-        raise ExecutorFailure(f"MATLAB Engine failed to start with the following error: \n {e}.")
+        raise GspackFailure(f"MATLAB Engine failed to start with the following error: \n {e}.")
     try:
-        return eval(f"eng.{file_path.stem}(nargout={matlab_settings['nargout']})")
+        eval(f"eng.{file_path.stem}(nargout={matlab_settings['nargout']})")
     except Exception as e:
         err_msg = f"Execution failed: \n {str(e)}"
         if str(e) == "MATLAB function cannot be evaluated":
@@ -19,4 +19,8 @@ def execute_matlab(file_path, matlab_settings):
         elif str(e).endswith(
                 ' (and maybe others) not assigned during call to "solution>student_solution".\n'):
             err_msg += "\n Check that you defined the aforementioned variables in your solution file."
-        raise ExecutionIncomplete(err_msg)
+        raise UserFailure(err_msg)
+    try:
+        return eng.workspace
+    except Exception:
+        raise GspackFailure("MATLAB's workspace is inaccessible")

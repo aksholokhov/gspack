@@ -11,7 +11,7 @@ import pickle
 import shutil
 from pathlib import Path
 
-from executor import Executor, ExecutorFailure, ExecutionIncomplete
+from gspack.executor import Executor
 
 # HOME_DIR = Path("/Users/aksh/Storage/repos/gspack/examples/python101/autograder")
 HOME_DIR = Path("/autograder")
@@ -184,18 +184,15 @@ if __name__ == '__main__':
 
     # Pull gradable variables out of student's solution
     student_answers_dict = {}
-    if language == "python" or language == "jupyter":
-        for test in test_suite:
-            answer_value = student_solution_output.get(test["variable_name"], None)
-            if answer_value is None:
-                results[
-                    "output"] += f"Variable {test['variable_name']} (and maybe others) is not assigned in your solution."
-                dump_results_and_exit(results)
-            else:
-                student_answers_dict[test["variable_name"]] = answer_value
-    elif language == "matlab":
-        for v, test in zip(student_solution_output[1:], test_suite):
-            student_answers_dict[test["variable_name"]] = matlab2python(v)
+
+    for test in test_suite:
+        answer_value = student_solution_output.get(test["variable_name"], None)
+        if answer_value is None:
+            results[
+                "output"] += f"Variable {test['variable_name']} (and maybe others) is not assigned in your solution."
+            dump_results_and_exit(results)
+        else:
+            student_answers_dict[test["variable_name"]] = answer_value
 
     # Grade student's solution results
     results["tests"] = []

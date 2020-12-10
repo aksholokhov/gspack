@@ -8,32 +8,10 @@ from nbformat import read
 from IPython.core.interactiveshell import InteractiveShell
 from contextlib import contextmanager
 
-from helpers import determine_platform
+from gspack.__about__ import __supported_platforms__
+from gspack.main import UserFailure, GspackFailure
+from gspack.helpers import determine_platform
 
-# These two errors indicate which side is responsible for the failure.
-# ExecutionIncomplete invokes when the execution is failed because of the student's or instructor's
-# code or its formatting and ultimately leads to a loss of an attempt by a student.
-# ExecutorFailure indicates that something went wrong in gspack, like MATLAB Engine failed to start.
-# The student is not responsible for this failure so it won't lead to a loss of an attempt.
-
-
-class ExecutionIncomplete(Exception):
-    """
-    This error indicates the situation when the execution failed
-    because something was wrong with the file, but not with the
-    Executor class itself. This is designed to indicate the failures
-    on the students'/instructor's side, i.e. code errors occurring in
-    their files or failure to comply with the required format.
-    """
-    pass
-
-
-class ExecutorFailure(Exception):
-    """
-    This errors indicates bugs in gspack. If this error is invoked then the
-    student does not loose an attempt and is being asked to contact the instructor for assistance.
-    """
-    pass
 
 @contextmanager
 def redirected_output(new_stdout=None, new_stderr=None):
@@ -74,19 +52,24 @@ def raise_timeout(signum, frame):
 
 
 class Executor:
-    def __init__(self, supported_platforms, timeout=1000, matlab_settings=None):
+    def __init__(self,
+                 supported_platforms=__supported_platforms__,
+                 timeout=1000,
+                 matlab_settings=None,
+                 verbose=False):
         self.supported_platforms = supported_platforms
         self.matlab_config = matlab_settings
         self.log_path = "execution_log_%s.txt"
         self.timeout = timeout
+        self.verbose = verbose
 
     def execute(self, file_path: Path, platform=None):
         if not os.path.exists(file_path):
-            raise FileNotFoundError(f"File does not exist: {file_path}")
+            raise UserFailure(f"File does not exist: {file_path}")
         if platform is None:
             platform = determine_platform(file_path)
         if platform is None:
-            raise ExecutionIncomplete(f"Can't recognize the language platform for the file {file_path}")
+            raise UserFailure(f"Can't recognize the language platform for the file {file_path}")
         my_dir = os.getcwd()
         os.chdir(file_path.parent)
         try:
@@ -97,23 +80,25 @@ class Executor:
             elif platform == "python":
                 output = self.execute_python(file_path)
             else:
-                raise ExecutorFailure(f"Unrecognized platform: {platform}")
+                raise GspackFailure(f"Unrecognized platform: {platform}")
         finally:
             os.chdir(my_dir)
+        if self.verbose:
+            print(f"Found and executed successfully: \n {file_path}")
         return platform, output
 
     def execute_matlab(self, file_path: Path):
         if "matlab" not in self.supported_platforms:
-            raise ExecutionIncomplete(
+            raise UserFailure(
                 "MATLAB support is disabled for this assignment, but a MATLAB file is submitted.")
         # MATLAB executor has been moved into a separate file because MATLAB Engine
         # requires being imported in the very first line of the file.
         try:
-            from matlab_executor import execute_matlab as execute_matlab_ext
+            from .matlab_executor import execute_matlab as execute_matlab_ext
             with timeout(self.timeout):
                 output = execute_matlab_ext(file_path, matlab_settings=self.matlab_config)
         except TimeoutError:
-            return ExecutionIncomplete("Code did not finish before timeout.")
+            return UserFailure("Code did not finish before timeout.")
         return output
 
     def execute_python(self, file_path: Path):
@@ -128,7 +113,7 @@ class Executor:
                     with timeout(self.timeout):
                         exec(code, module.__dict__)
                 except Exception as e:
-                    raise ExecutionIncomplete(f"Error occurred while executing your code: {str(e)}")
+                    raise UserFailure(f"Error occurred while executing your code: {str(e)}")
             # in case the code opened plots -- close them
             # to avoid buffer overflow
             plt.close()
@@ -169,9 +154,9 @@ class Executor:
                                 with redirected_output(new_stdout=f):
                                     exec(code, module.__dict__)
                         except TimeoutError:
-                            raise ExecutionIncomplete("Code did not finish before timeout")
+                            raise UserFailure("Code did not finish before timeout")
                         except Exception as e:
-                            raise ExecutionIncomplete("Exception in code cell %d: %s" % (code_cells_counter, e))
+                            raise UserFailure("Exception in code cell %d: %s" % (code_cells_counter, e))
                         plt.close()
             finally:
                 shell.user_ns = save_user_ns

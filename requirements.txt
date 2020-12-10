@@ -4,3 +4,4 @@ click
 numpy
 ipython
 nbformat
+matplotlib
