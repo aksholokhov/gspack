@@ -9,7 +9,7 @@ from IPython.core.interactiveshell import InteractiveShell
 from contextlib import contextmanager
 
 from gspack.__about__ import __supported_platforms__
-from gspack.main import UserFailure, GspackFailure
+from gspack.helpers import UserFailure, GspackFailure
 from gspack.helpers import determine_platform
 
 

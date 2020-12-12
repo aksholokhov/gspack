@@ -1,5 +1,5 @@
 import matlab.engine
-from gspack.main import UserFailure, GspackFailure
+from gspack.helpers import UserFailure, GspackFailure
 
 
 def execute_matlab(file_path, matlab_settings):

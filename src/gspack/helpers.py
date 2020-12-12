@@ -1,4 +1,28 @@
 import subprocess
+import numbers
+
+# These two errors indicate which side is responsible for the failure.
+# UserFailure invokes when the execution is failed because of the student's or instructor's
+# code or its formatting and ultimately leads to a loss of an attempt by a student.
+# GspackFailure indicates that something went wrong in gspack, like MATLAB Engine failed to start.
+# Normally it indicates a bug in my code.
+# The student is not responsible for this error so it won't lead to a loss of an attempt.
+
+
+class UserFailure(Exception):
+    """
+    This error indicates the situations when something was wrong because
+    of the user's actions.
+    """
+    pass
+
+
+class GspackFailure(Exception):
+    """
+    This errors indicates bugs in gspack. If this error is invoked then the
+    student does not loose an attempt and is being asked to contact the instructor for assistance.
+    """
+    pass
 
 
 def generate_requirements(filepath, output_path):
@@ -7,13 +31,16 @@ def generate_requirements(filepath, output_path):
     return process.communicate()
 
 
+supported_platforms = {
+    "python": [".py", ],
+    "matlab": [".m"],
+    "jupyter": [".ipynb"]
+}
+
+
 def determine_platform(file_path):
-    if str(file_path).endswith(".py"):
-        platform = "python"
-    elif str(file_path).endswith(".m"):
-        platform = "matlab"
-    elif str(file_path).endswith(".ipynb"):
-        platform = "jupyter"
-    else:
-        platform = None
-    return platform
+    for platform, extensions in supported_platforms.items():
+        for extension in extensions:
+            if str(file_path).endswith(extension):
+                return platform
+    return None

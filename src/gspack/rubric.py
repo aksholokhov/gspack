@@ -5,8 +5,8 @@ from zipfile import ZipFile
 import pickle
 
 from gspack.__about__ import __author__, __email__, __supported_platforms__
-from gspack.main import UserFailure, GspackFailure
-from gspack.helpers import generate_requirements
+from gspack.helpers import UserFailure, GspackFailure
+from gspack.helpers import generate_requirements, get_hint
 from gspack.directories import *
 
 
@@ -19,7 +19,8 @@ class Rubric:
                  matlab_credentials=None,
                  extra_files=(),
                  test_suite_values=None,
-                 verbose=False):
+                 verbose=False,
+                 **kwargs):
         self.test_suite = test_suite
         self.test_suite_values = test_suite_values
         self.total_score = total_score
@@ -39,7 +40,7 @@ class Rubric:
 
     @staticmethod
     def from_dict(module: dict, verbose=False):
-        correct = Rubric.check_rubric_correctness(module)
+        correct = Rubric.check_rubric_correctness(module, verbose=verbose)
         if correct:
             return Rubric(**module, verbose=verbose)
 
@@ -91,6 +92,7 @@ class Rubric:
         else:
             if verbose:
                 print(f"Number of attempts: unlimited.")
+            # manually set the unlimited number of attempts
 
         supported_platforms = rubric.get("supported_platforms", None)
         if supported_platforms is not None:
@@ -128,10 +130,10 @@ class Rubric:
             "supported_platforms": self.supported_platforms,
             "extra_files": self.extra_files
         }
-        with open(path / "rubric.json", "w") as f:
+        with open(path / RUBRIC_JSON, "w") as f:
             json.dump(dict_to_save, f)
         if self.test_suite_values is not None:
-            with open(path / "test_suite_values", "wb") as f:
+            with open(path / TEST_SUITE_VALUES_FILE, "wb") as f:
                 pickle.dump(self.test_suite_values, f)
 
     def create_archive(self, archive_path: Path):
@@ -158,11 +160,15 @@ class Rubric:
             try:
                 if self.verbose:
                     print("Generating requirements for your solution:")
-                _ = generate_requirements(archive_dir,
-                                          output_path=archive_dir / DIST_DIR / REQUIREMENTS_FILE)
-                # print(generate_reqs_output[0])
+                generate_reqs_output = generate_requirements(archive_dir,
+                                                             output_path=archive_dir / DIST_DIR / REQUIREMENTS_FILE)
+                if not generate_reqs_output[0].startswith(b"INFO: Successfully saved"):
+                    raise GspackFailure(generate_reqs_output[0])
+                if self.verbose:
+                   print(f"-> {REQUIREMENTS_FILE}: OK")
+
             except Exception as e:
-                raise GspackFailure(f"Generating requirements for your solution: FAILED with the error: {str(e)}")
+                raise e
 
             config = {}
 

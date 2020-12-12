@@ -56,7 +56,8 @@ if __name__ == "__main__":
         },
         entry_points='''
             [console_scripts]
-            gspack=gspack:create_autograder_from_console
+            gspack=gspack:create_autograder
+            gspack-grade=gspack:grade_locally
         ''',
 
         zip_safe=False,
