@@ -72,61 +72,46 @@ class Environment:
         )
         return environment
 
+    def write_down_and_exit(self, results, keep_maximal_score=True):
+        if keep_maximal_score:
+            if results["score"] < self.max_previous_score:
+                results["score"] = self.max_previous_score
+                results["output"] += (f'The score is set to your previous ' +
+                                      f'maximal score of {self.max_previous_score}/{self.max_score}\n')
+        with open(self.results_path, "w") as f:
+            json.dump(results, f, indent=4)
+        exit(0)
 
     def write_results(self, results=None, exception=None):
 
-        attempt_counts = False
-        keep_previous_score = False
+        if self.attempt_number > self.max_number_of_attempts and not self.test_student:
+            results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
+            results["tests"] = []
+            self.write_down_and_exit(results)
 
-        if self.attempt_number > self.max_number_of_attempts:
-            output = f"You've already used all {self.max_number_of_attempts} attempts."
-            keep_previous_score  = True
-            attempt_counts = False
-
-        if self.max_previous_score >= self.max_score:
-            output = "You already achieved maximum score possible."
-
+        if self.max_previous_score >= self.max_score and not self.test_student:
+            results["output"] = "You already achieved maximum score possible.\n"
+            results["tests"] = []
+            self.write_down_and_exit(results)
 
         output = (f"Attempt {self.attempt_number}" +
-                 (f"/{self.max_number_of_attempts}" if (self.max_number_of_attempts > 0
-                                                        and not self.test_student
-                                                        ) else ""))
+                  (f"/{self.max_number_of_attempts}\n" if (self.max_number_of_attempts > 0
+                                                         and not self.test_student
+                                                         ) else "Unlimited\n"))
         if exception is not None:
-            output += "ERROR: \n"
+            output += " ERROR: \n"
             if type(exception) is UserFailure:
                 output += str(exception) + "\n"
             else:
                 output += ("Autograder failed to process your submission due to an internal error." +
                            "Please contact your instructor for assistance."
-                           "This attempt does not count towards your total number of attempts, if limited."
+                           "This attempt does not count towards your total number of attempts, if limited.\n"
                            )
-                attempt_counts = False
+                results["extra_data"]["success"] = False
             results = {
                 "output": output,
                 "score": self.max_previous_score
             }
         elif results is not None:
-            pass
-
-
-        with open(self.results_path, "w") as f:
-            json.dump(results, f, indent=4)
-        #############################
-
-        output = ""
-        test_student = False
-        try:
-            test_student = submission_metadata["users"][0]["name"] == "Test Student"
-        except Exception as e:
-            print(f"Can't access student's name: {e}")
-        if test_student:
-            results["output"] += f"Submitted as Test Student (unlimited attempts)"
-        else:
-            if number_of_used_attempts >= number_of_attempts:
-                results["output"] += f"You've already used all {number_of_attempts} allowed attempts."
-                dump_results_and_exit(results, print_score=False)
-            else:
-                results[
-                    "output"] += f"This is your attempt {number_of_used_attempts + 1} out of {number_of_attempts}. \n"
-
-        pass
+            results["output"] = f"Executed successfully. Current score: {results['score']}/{self.max_score} \n"
+        self.write_down_and_exit(results)

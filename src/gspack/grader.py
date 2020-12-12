@@ -91,7 +91,7 @@ def get_submission_file_path(submission_dir: Path, main_file_name=None):
 
 def get_grades(rubric, platform: str, solution: dict):
     # Grade student's solution results
-    results = {"output": "", "score": 0, "tests": [], "extra_data": {"pretest": False}}
+    results = {"output": "", "score": 0, "tests": [], "extra_data": {"success": True, "pretest": False}}
     total_score = 0
     if rubric.test_suite is None:
         raise GspackFailure("Rubric is not initialized properly: test_suite is None")
