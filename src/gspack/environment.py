@@ -86,18 +86,6 @@ class Environment:
 
     def write_results(self, results=None, exception=None):
 
-        if self.attempt_number > self.max_number_of_attempts and not self.test_student:
-            results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
-            results["tests"] = []
-            self.write_down_and_exit(results)
-            return None
-
-        if self.max_previous_score >= self.max_score and not self.test_student:
-            results["output"] = "You already achieved maximum score possible.\n"
-            results["tests"] = []
-            self.write_down_and_exit(results)
-            return None
-
         output = (f"Attempt {self.attempt_number}" +
                   (f"/{self.max_number_of_attempts}\n" if (self.max_number_of_attempts > 0
                                                            and not self.test_student
@@ -121,8 +109,19 @@ class Environment:
                                       f" total number of attempts, if limited.\n"
                                       )
                 results["extra_data"]["success"] = False
+
         elif results is not None:
             # TODO: check that tests are formed correctly?
-            results["output"] = f"Executed successfully. Current score: {results['score']}/{self.max_score} \n"
+            results["output"] = output + f"Executed successfully. Current score: {results['score']}/{self.max_score} \n"
+
+        if self.max_previous_score >= self.max_score and not self.test_student:
+            results["output"] = "You already achieved maximum score possible.\n"
+            results["tests"] = []
+
+        if self.attempt_number > self.max_number_of_attempts and not self.test_student:
+            results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
+            results["tests"] = []
+
+        results["score"] = round(results["score"], 2)
         self.write_down_and_exit(results)
         return None
