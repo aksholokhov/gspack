@@ -2,7 +2,7 @@
 
 # Install python
 apt-get install -y python python3 python3-pip python3-dev jq git
-git clone https://github.com/aksholokhov/gspack.git
+git clone --branch jupyter https://github.com/aksholokhov/gspack.git
 cd gspack || exit
 python setup.py install
 cd ..

@@ -4,13 +4,13 @@ __all__ = [
 ]
 
 __title__ = "gspack"
-__summary__ = "Assignment Packager for the GradeScope Autograder."
+__summary__ = "Assignment Packager for the Gradescope Autograder."
 __uri__ = "https://github.com/aksholokhov/gspack"
 
-__version__ = "0.1.4"
+__version__ = "0.2.0"
 
 __author__ = "Aleksei Sholokhov"
 __email__ = "aksh@uw.edu"
 
 __license__ = "GNU GPLv3"
-__copyright__ = f"Copyright 2020 {__author__}"
+__copyright__ = f"Copyright 2020-2021 {__author__}"

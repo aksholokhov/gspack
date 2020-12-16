@@ -2,9 +2,7 @@ from pathlib import Path
 
 from setuptools import setup, find_packages
 
-
 if __name__ == "__main__":
-
     base_dir = Path(__file__).parent
     src_dir = base_dir / 'src'
 
@@ -38,7 +36,7 @@ if __name__ == "__main__":
         package_dir={'': 'src'},
         packages=find_packages(where='src'),
 
-        package_data = {
+        package_data={
             "gspack": ["src/gspack/templates/run_autograder",
                        "src/gspack/templates/run_tests.py",
                        "src/gspack/templates/setup.sh",
@@ -58,8 +56,8 @@ if __name__ == "__main__":
             [console_scripts]
             gspack=gspack:create_autograder
             gsgrade=gspack:grade_locally
+            gsgrade_gradescope=gspack:grade_on_gradescope
         ''',
 
         zip_safe=False,
     )
-

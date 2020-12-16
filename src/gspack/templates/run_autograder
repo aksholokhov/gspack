@@ -1,2 +1,3 @@
 # Run the testing script
-python3 /autograder/source/run_grader.py
+# python3 /autograder/source/run_grader.py
+gsgrade

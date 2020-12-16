@@ -23,15 +23,15 @@ def grade_on_gradescope():
     return run_grader(Environment.from_gradescope())
 
 
-# @click.command(
-#     help="Grades solution given solution and rubric"
-# )
-# @click.argument(
-#     "submission_path",
-# )
-# @click.argument(
-#     "rubric_path",
-# )
+@click.command(
+    help="Grades solution given solution and rubric"
+)
+@click.argument(
+    "submission_path",
+)
+@click.argument(
+    "rubric_path",
+)
 def grade_locally(submission_path, rubric_path):
     submission_path_absolute = Path(submission_path).absolute()
     rubric_path_absolute = Path(rubric_path).absolute()
