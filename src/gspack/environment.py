@@ -25,6 +25,8 @@ class Environment:
         self.email = email
         if name == TEST_STUDENT_NAME and email == TEST_STUDENT_EMAIL:
             self.test_student = True
+        else:
+            self.test_student = False
         self.attempt_number = attempt_number
         self.max_number_of_attempts = max_number_of_attempts
         self.max_score = max_score

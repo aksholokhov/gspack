@@ -147,7 +147,7 @@ class Rubric:
             "number_of_attempts": self.number_of_attempts,
             "supported_platforms": self.supported_platforms,
             "extra_files": self.extra_files,
-            "main_file_name": self.main_file_name
+            "main_file_name": self.main_file_name,
         }
         with open(path / RUBRIC_JSON, "w") as f:
             json.dump(dict_to_save, f)
