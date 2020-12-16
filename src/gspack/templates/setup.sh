@@ -2,14 +2,15 @@
 
 # Install python
 apt-get install -y python python3 python3-pip python3-dev jq git
-git clone --branch jupyter https://github.com/aksholokhov/gspack.git
-cd gspack || exit
-python setup.py install
-cd ..
 # Install gspack dependencies
 pip3 install subprocess32 numpy scipy matplotlib
 # Install solution script dependencies
 pip3 install -r /autograder/source/requirements.txt
+# Install gspack
+git clone --branch jupyter https://github.com/aksholokhov/gspack.git
+cd gspack || exit
+python3 setup.py install
+cd ..
 
 matlab=$(jq '.matlab_support' /autograder/source/config.json)
 if [ $matlab = 1 ]; then
