@@ -57,10 +57,10 @@ class Executor:
     def __init__(self,
                  supported_platforms=all_supported_platforms.keys(),
                  timeout_for_execution=1000,
-                 matlab_settings=None,
+                 matlab_config=None,
                  verbose=False):
         self.supported_platforms = supported_platforms
-        self.matlab_config = matlab_settings
+        self.matlab_config = matlab_config
         self.log_path = "execution_log_%s.txt"
         self.timeout = timeout_for_execution
         self.verbose = verbose

@@ -32,6 +32,12 @@ class Rubric:
         self.extra_files = extra_files
         self.verbose = verbose
         self.main_file_name = main_file_name
+        if "matlab" in self.supported_platforms:
+            self.matlab_config = {
+                "variables_to_take": [test["variable_name"] for test in test_suite] + ["pretest"]
+            }
+        else:
+            self.matlab_config = None
 
     @staticmethod
     def from_json(rubric_path: Path, verbose=False, **kwargs):
@@ -119,8 +125,9 @@ class Rubric:
 
         main_file_name = rubric.get("main_file_name", None)
         if main_file_name is not None:
-            print(f"Main file's name: {main_file_name}" +
-                  f"[{';'.join(chain(*[all_supported_platforms[platform] for platform in supported_platforms]))}]")
+            if verbose:
+                print(f"Main file's name: {main_file_name}" +
+                      f"[{';'.join(chain(*[all_supported_platforms[platform] for platform in supported_platforms]))}]")
 
         extra_files = rubric.get("extra_files", None)
         if extra_files is not None:

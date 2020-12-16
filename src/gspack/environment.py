@@ -110,9 +110,9 @@ class Environment:
                     "success": True
                 }
             }
-            output += " ERROR: \n"
+            results["output"] += " ERROR: \n"
             if type(exception) is UserFailure:
-                output += str(exception) + "\n"
+                results["output"] += str(exception) + "\n"
             else:
                 results["output"] += (f"Autograder failed to process your submission" +
                                       f" due to an internal error: \n {str(exception)} \n" +

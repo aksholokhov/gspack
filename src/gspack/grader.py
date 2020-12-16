@@ -23,15 +23,15 @@ def grade_on_gradescope():
     return run_grader(Environment.from_gradescope())
 
 
-@click.command(
-    help="Grades solution given solution and rubric"
-)
-@click.argument(
-    "submission_path",
-)
-@click.argument(
-    "rubric_path",
-)
+# @click.command(
+#     help="Grades solution given solution and rubric"
+# )
+# @click.argument(
+#     "submission_path",
+# )
+# @click.argument(
+#     "rubric_path",
+# )
 def grade_locally(submission_path, rubric_path):
     submission_path_absolute = Path(submission_path).absolute()
     rubric_path_absolute = Path(rubric_path).absolute()
@@ -47,14 +47,15 @@ def grade_locally(submission_path, rubric_path):
 
 def run_grader(environment):
     try:
-        rubric = Rubric.from_json(environment.rubric_path, verbose=True)
+        rubric = Rubric.from_json(environment.rubric_path)
         with open(environment.test_values_path, 'rb') as f:
             rubric.test_suite_values = pickle.load(f)
         environment.max_number_of_attempts = rubric.number_of_attempts
         environment.max_score = rubric.total_score
         submission_file_path = get_submission_file_path(environment.submission_dir,
                                                         main_file_name=rubric.main_file_name)
-        executor = Executor(supported_platforms=rubric.supported_platforms)
+        executor = Executor(supported_platforms=rubric.supported_platforms,
+                            matlab_config=rubric.matlab_config)
         platform, submission_variables = executor.execute(submission_file_path)
         results = get_grades(rubric, platform, submission_variables)
         environment.write_results(results=results)

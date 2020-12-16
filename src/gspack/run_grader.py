@@ -169,7 +169,7 @@ if __name__ == '__main__':
         dump_results_and_exit(results)
 
     # execute student's solution
-    executor = Executor(["python", "matlab"], matlab_settings={
+    executor = Executor(["python", "matlab"], matlab_config={
         "nargout": len(test_suite)+1,
         "matlab_use_template": True
     })
