@@ -3,10 +3,11 @@ import json
 import shutil
 from zipfile import ZipFile
 import pickle
+from itertools import chain
 
-from gspack.__about__ import __author__, __email__, __supported_platforms__
+from gspack.__about__ import __author__, __email__
 from gspack.helpers import UserFailure, GspackFailure
-from gspack.helpers import generate_requirements, get_hint
+from gspack.helpers import generate_requirements, all_supported_platforms
 from gspack.directories import *
 
 
@@ -20,6 +21,7 @@ class Rubric:
                  extra_files=(),
                  test_suite_values=None,
                  verbose=False,
+                 main_file_name=None,
                  **kwargs):
         self.test_suite = test_suite
         self.test_suite_values = test_suite_values
@@ -29,23 +31,24 @@ class Rubric:
         self.matlab_credentials = matlab_credentials
         self.extra_files = extra_files
         self.verbose = verbose
+        self.main_file_name = main_file_name
 
     @staticmethod
-    def from_json(rubric_path: Path, verbose=False):
+    def from_json(rubric_path: Path, verbose=False, **kwargs):
         if not rubric_path.exists() or not rubric_path.is_file():
-            raise UserFailure(f"Rubric file does not exist: \n -> {rubric_path}")
+            raise GspackFailure(f"Rubric file does not exist: \n -> {rubric_path}")
         with open(rubric_path, 'r') as f:
             rubric = json.load(f)
-        return Rubric.from_dict(rubric, verbose=verbose)
+        return Rubric.from_dict(rubric, verbose=verbose, **kwargs)
 
     @staticmethod
-    def from_dict(module: dict, verbose=False):
-        correct = Rubric.check_rubric_correctness(module, verbose=verbose)
+    def from_dict(module: dict, verbose=False, **kwargs):
+        correct = Rubric.check_rubric_correctness(module, verbose=verbose, **kwargs)
         if correct:
             return Rubric(**module, verbose=verbose)
 
     @staticmethod
-    def check_rubric_correctness(rubric: dict, verbose=False):
+    def check_rubric_correctness(rubric: dict, verbose=False, solution_platform=None, **kwargs):
         # Checking the correctness of the test suite
         test_suite = rubric.get('test_suite', None)
         if test_suite is None:
@@ -69,12 +72,16 @@ class Rubric:
                     test['score'] = score_per_test
             else:
                 if (test.get('score', None) is None) and (score_per_test is None):
-                    raise UserFailure(f"{test['test_name']}: score is missing")
+                    raise UserFailure(f"{test['test_name']}: score is missing and total_score is not defined." +
+                                      " You need to either define scores for each test or define total_score.")
                 else:
-                    raise UserFailure(
-                        f"{test['test_name']}: both total_score and this particular test's score are defined." +
-                        f" You need to define either one global score to assign points evenly," +
-                        f" or to define all test's scores manually. ")
+                    score_from_rubric = float(test['score'])
+                    if abs(score_from_rubric - score_per_test) > 1e-2:
+                        raise UserFailure(
+                            f"{test['test_name']}: score for this test is not consistent with total_score:" +
+                            f" {score_from_rubric:.2f} vs {score_per_test:.2f} ({total_score}/{len(test_suite)})."
+                            f" You need to define either one global score to assign points evenly," +
+                            f" or to define all test's scores manually. When you do both make sure they're consistent.")
             actual_total_score += float(test['score'])
             if verbose:
                 print(f"-> {test['test_name']}: OK")
@@ -99,10 +106,21 @@ class Rubric:
             if not type(supported_platforms) is list:
                 raise UserFailure("supported_platforms should be a list of strings")
             for platform in supported_platforms:
-                if platform not in __supported_platforms__:
+                if platform not in all_supported_platforms.keys():
                     raise UserFailure(f"Unrecognized platform: {platform}")
-            if verbose:
-                print(f"Supported platforms: {', '.join(supported_platforms)}")
+        else:
+            if solution_platform is not None:
+                supported_platforms = [solution_platform, ]
+            else:
+                raise GspackFailure("Neither supported_platforms nor solution's platform is provided.")
+        rubric["supported_platforms"] = supported_platforms
+        if verbose:
+            print(f"Supported platforms: {', '.join(supported_platforms)}")
+
+        main_file_name = rubric.get("main_file_name", None)
+        if main_file_name is not None:
+            print(f"Main file's name: {main_file_name}" +
+                  f"[{';'.join(chain(*[all_supported_platforms[platform] for platform in supported_platforms]))}]")
 
         extra_files = rubric.get("extra_files", None)
         if extra_files is not None:
@@ -128,7 +146,8 @@ class Rubric:
             "total_score": self.total_score,
             "number_of_attempts": self.number_of_attempts,
             "supported_platforms": self.supported_platforms,
-            "extra_files": self.extra_files
+            "extra_files": self.extra_files,
+            "main_file_name": self.main_file_name
         }
         with open(path / RUBRIC_JSON, "w") as f:
             json.dump(dict_to_save, f)
@@ -165,7 +184,7 @@ class Rubric:
                 if not generate_reqs_output[0].startswith(b"INFO: Successfully saved"):
                     raise GspackFailure(generate_reqs_output[0])
                 if self.verbose:
-                   print(f"-> {REQUIREMENTS_FILE}: OK")
+                    print(f"-> {REQUIREMENTS_FILE}: OK")
 
             except Exception as e:
                 raise e

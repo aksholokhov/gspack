@@ -1,7 +1,7 @@
 from gspack.directories import *
 import json
 
-from gspack.helpers import UserFailure, GspackFailure
+from gspack.helpers import UserFailure
 from gspack.directories import TEST_STUDENT_NAME, TEST_STUDENT_EMAIL
 
 
@@ -80,7 +80,7 @@ class Environment:
                                       f'maximal score of {self.max_previous_score}/{self.max_score}\n')
         with open(self.results_path, "w") as f:
             json.dump(results, f, indent=4)
-        exit(0)
+        return None
 
     def write_results(self, results=None, exception=None):
 
@@ -88,30 +88,39 @@ class Environment:
             results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
             results["tests"] = []
             self.write_down_and_exit(results)
+            return None
 
         if self.max_previous_score >= self.max_score and not self.test_student:
             results["output"] = "You already achieved maximum score possible.\n"
             results["tests"] = []
             self.write_down_and_exit(results)
+            return None
 
         output = (f"Attempt {self.attempt_number}" +
                   (f"/{self.max_number_of_attempts}\n" if (self.max_number_of_attempts > 0
-                                                         and not self.test_student
-                                                         ) else "Unlimited\n"))
+                                                           and not self.test_student
+                                                           ) else "/Unlimited\n"))
         if exception is not None:
+            results = {
+                "output": output,
+                "score": self.max_previous_score,
+                "extra_data": {
+                    "success": True
+                }
+            }
             output += " ERROR: \n"
             if type(exception) is UserFailure:
                 output += str(exception) + "\n"
             else:
-                output += ("Autograder failed to process your submission due to an internal error." +
-                           "Please contact your instructor for assistance."
-                           "This attempt does not count towards your total number of attempts, if limited.\n"
-                           )
+                results["output"] += (f"Autograder failed to process your submission" +
+                                      f" due to an internal error: \n {str(exception)} \n" +
+                                      f"Please contact your instructor for assistance. " +
+                                      f" This attempt does not count towards your" +
+                                      f" total number of attempts, if limited.\n"
+                                      )
                 results["extra_data"]["success"] = False
-            results = {
-                "output": output,
-                "score": self.max_previous_score
-            }
         elif results is not None:
+            # TODO: check that tests are formed correctly?
             results["output"] = f"Executed successfully. Current score: {results['score']}/{self.max_score} \n"
         self.write_down_and_exit(results)
+        return None

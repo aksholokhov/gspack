@@ -1,6 +1,6 @@
 __all__ = [
     "__title__", "__summary__", "__uri__", "__version__", "__author__",
-    "__email__", "__license__", "__copyright__", "__supported_platforms__"
+    "__email__", "__license__", "__copyright__"
 ]
 
 __title__ = "gspack"
@@ -14,5 +14,3 @@ __email__ = "aksh@uw.edu"
 
 __license__ = "GNU GPLv3"
 __copyright__ = f"Copyright 2020 {__author__}"
-__supported_platforms__ = ("python", "jupyter", "matlab")
-

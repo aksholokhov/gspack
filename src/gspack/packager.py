@@ -46,11 +46,10 @@ def create_autograder(solution, rubric, verbose=True):
         platform, solution_variables = Executor(verbose=True).execute(solution_path)
         if rubric is not None:
             rubric_path = Path(rubric).absolute()
-            rubric = Rubric.from_json(rubric_path, verbose=verbose)
+            rubric = Rubric.from_json(rubric_path, verbose=verbose, solution_platform=platform)
         else:
-            rubric = Rubric.from_dict(solution_variables, verbose=verbose)
-        if rubric.supported_platforms is None:
-            rubric.supported_platforms = (platform, )
+            rubric = Rubric.from_dict(solution_variables, verbose=verbose, solution_platform=platform)
+
         rubric.fetch_values_for_tests(solution_variables)
         rubric.create_archive(solution_path.parent / AUTOGRADER_ZIP)
     except UserFailure as e:

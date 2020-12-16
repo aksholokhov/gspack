@@ -12,6 +12,7 @@ from gspack.environment import Environment
 from gspack.helpers import UserFailure, GspackFailure, determine_platform
 from gspack.directories import TEST_SUITE_VALUES_FILE, GS_RESULTS_JSON
 
+
 @click.command(
     help="Grades submission in Gradescope environment"
 )
@@ -22,28 +23,37 @@ def grade_on_gradescope():
     return run_grader(Environment.from_gradescope())
 
 
-@click.command(
-    help="Grades solution given solution and rubric"
-)
+# @click.command(
+#     help="Grades solution given solution and rubric"
+# )
+# @click.argument(
+#     "submission_path",
+# )
+# @click.argument(
+#     "rubric_path",
+# )
 def grade_locally(submission_path, rubric_path):
+    submission_path_absolute = Path(submission_path).absolute()
+    rubric_path_absolute = Path(rubric_path).absolute()
     environment = Environment(
-        submission_path=Path(submission_path).absolute(),
-        submission_dir=Path(submission_path).parent,
-        rubric_path=Path(rubric_path),
-        test_values_path=Path(rubric_path).parent / TEST_SUITE_VALUES_FILE,
-        results_path=Path(GS_RESULTS_JSON.name)
+        submission_path=submission_path_absolute,
+        submission_dir=submission_path_absolute.parent,
+        rubric_path=rubric_path_absolute,
+        test_values_path=rubric_path_absolute.parent / TEST_SUITE_VALUES_FILE,
+        results_path=submission_path_absolute.parent / GS_RESULTS_JSON.name
     )
     return run_grader(environment)
 
 
 def run_grader(environment):
     try:
-        rubric = Rubric.from_json(environment.rubric_path)
+        rubric = Rubric.from_json(environment.rubric_path, verbose=True)
         with open(environment.test_values_path, 'rb') as f:
             rubric.test_suite_values = pickle.load(f)
         environment.max_number_of_attempts = rubric.number_of_attempts
         environment.max_score = rubric.total_score
-        submission_file_path = get_submission_file_path(environment.submission_dir)
+        submission_file_path = get_submission_file_path(environment.submission_dir,
+                                                        main_file_name=rubric.main_file_name)
         executor = Executor(supported_platforms=rubric.supported_platforms)
         platform, submission_variables = executor.execute(submission_file_path)
         results = get_grades(rubric, platform, submission_variables)
@@ -78,13 +88,13 @@ def get_submission_file_path(submission_dir: Path, main_file_name=None):
     main_file = None
     if main_file_name is not None:
         for file in submission_files:
-            if file.name == main_file_name:
+            if file.stem == main_file_name:
                 main_file = file
                 break
     else:
         if len(submission_files) > 1:
             raise UserFailure("You should have submitted one file, but you submitted many: \n " +
-                              "\n".join(submission_files))
+                              "\n".join([str(f) for f in submission_files]))
         main_file = submission_files[0]
     return main_file
 
@@ -138,8 +148,9 @@ def get_grades(rubric, platform: str, solution: dict):
         if not ((type(reduced_answer) == type(reduced_true_answer)) or (
                 type(reduced_answer) in (float, int) and (type(reduced_true_answer) in (float, int)))):
             test_result[
-                "output"] = f"Wrong answer type: the type of your variable {test['variable_name']} is {print_reduced_type(reduced_answer)}, " \
-                            f"but it should be a {print_reduced_type(reduced_true_answer)}. "
+                "output"] = (f"Wrong answer type: the type of your variable {test['variable_name']}" +
+                             f" is {print_reduced_type(reduced_answer)}, " +
+                             f"but it should be a {print_reduced_type(reduced_true_answer)}. ")
             test_result["output"] += get_hint(test, "hint_wrong_type", platform)
 
             continue
@@ -147,15 +158,17 @@ def get_grades(rubric, platform: str, solution: dict):
             if (type(reduced_answer) is np.ndarray) and (type(reduced_true_answer) is np.ndarray):
                 if reduced_answer.shape != reduced_true_answer.shape:
                     test_result[
-                        "output"] = f"Wrong dimensions: the shape of your variable {test['variable_name']} is {reduced_answer.shape}, " \
-                                    f"but it should be {reduced_true_answer.shape}. "
+                        "output"] = (f"Wrong dimensions: the shape of your variable" +
+                                     f" {test['variable_name']} is {reduced_answer.shape}, " +
+                                     f"but it should be {reduced_true_answer.shape}. ")
                     test_result["output"] += get_hint(test, "hint_wrong_size", platform)
                     continue
 
                 if reduced_answer.dtype != reduced_true_answer.dtype:
                     test_result[
-                        "output"] = f"Wrong data type of the array: the data type of your array {test['variable_name']} is {reduced_answer.dtype}, " \
-                                    f"but it should be {reduced_true_answer.dtype}. "
+                        "output"] = (f"Wrong data type of the array: the data type" +
+                                     f" of your array {test['variable_name']} is {reduced_answer.dtype}, " +
+                                     f"but it should be {reduced_true_answer.dtype}. ")
                     test_result["output"] += get_hint(test, "hint_wrong_type", platform)
                     continue
 
@@ -204,7 +217,7 @@ def print_reduced_type(a):
     elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
         try:
             res = np.array(a, dtype=float)
-        except Exception as e:
+        except ValueError:
             return str(type(a))
         return f"matrix of shape {res.shape}"
     elif isinstance(a, str):

@@ -1,5 +1,4 @@
 import subprocess
-import numbers
 
 # These two errors indicate which side is responsible for the failure.
 # UserFailure invokes when the execution is failed because of the student's or instructor's
@@ -31,7 +30,7 @@ def generate_requirements(filepath, output_path):
     return process.communicate()
 
 
-supported_platforms = {
+all_supported_platforms = {
     "python": [".py", ],
     "matlab": [".m"],
     "jupyter": [".ipynb"]
@@ -39,7 +38,7 @@ supported_platforms = {
 
 
 def determine_platform(file_path):
-    for platform, extensions in supported_platforms.items():
+    for platform, extensions in all_supported_platforms.items():
         for extension in extensions:
             if str(file_path).endswith(extension):
                 return platform

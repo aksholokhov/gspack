@@ -1,16 +1,18 @@
-import os, sys, io, types, signal
-
+import io
+import os
+import signal
+import sys
+import types
+from contextlib import contextmanager
 from pathlib import Path
-from matplotlib import pyplot as plt
 
 from IPython import get_ipython
-from nbformat import read
 from IPython.core.interactiveshell import InteractiveShell
-from contextlib import contextmanager
+from matplotlib import pyplot as plt
+from nbformat import read
 
-from gspack.__about__ import __supported_platforms__
 from gspack.helpers import UserFailure, GspackFailure
-from gspack.helpers import determine_platform
+from gspack.helpers import determine_platform, all_supported_platforms
 
 
 @contextmanager
@@ -47,20 +49,20 @@ def timeout(time):
         signal.signal(signal.SIGALRM, signal.SIG_IGN)
 
 
-def raise_timeout(signum, frame):
+def raise_timeout(_):
     raise TimeoutError
 
 
 class Executor:
     def __init__(self,
-                 supported_platforms=__supported_platforms__,
-                 timeout=1000,
+                 supported_platforms=all_supported_platforms.keys(),
+                 timeout_for_execution=1000,
                  matlab_settings=None,
                  verbose=False):
         self.supported_platforms = supported_platforms
         self.matlab_config = matlab_settings
         self.log_path = "execution_log_%s.txt"
-        self.timeout = timeout
+        self.timeout = timeout_for_execution
         self.verbose = verbose
 
     def execute(self, file_path: Path, platform=None):
@@ -161,4 +163,3 @@ class Executor:
             finally:
                 shell.user_ns = save_user_ns
         return module.__dict__
-

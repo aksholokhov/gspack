@@ -57,7 +57,7 @@ if __name__ == "__main__":
         entry_points='''
             [console_scripts]
             gspack=gspack:create_autograder
-            gspack-grade=gspack:grade_locally
+            gsgrade=gspack:grade_locally
         ''',
 
         zip_safe=False,
