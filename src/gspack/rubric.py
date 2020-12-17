@@ -21,7 +21,7 @@ class Rubric:
                  **kwargs):
         self.test_suite = test_suite
         self.test_suite_values = test_suite_values
-        self.total_score = total_score
+        self.total_score = round(total_score, 2)
         self.number_of_attempts = number_of_attempts
         self.supported_platforms = supported_platforms
         self.matlab_credentials = matlab_credentials

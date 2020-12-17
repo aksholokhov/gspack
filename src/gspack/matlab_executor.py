@@ -20,7 +20,7 @@ def matlab2python(a):
                           )
     if type(a) in matlab_array_types:
         return np.array(a, dtype=float)
-    elif type(a) == int or type(a) == float or type(a) == str:
+    elif type(a) == int or type(a) == float or type(a) == str or type(a) == bool:
         return a
     else:
         raise ValueError(f"Unknown MATLAB type: {type(a)}")
@@ -56,4 +56,4 @@ def execute_matlab(file_path, matlab_settings):
         eng.quit()
         return workspace
     except Exception as e:
-        raise GspackFailure("MATLAB's workspace is inaccessible")
+        raise GspackFailure(f"Failure while exporting data from MATLAB environment: \n {str(e)}")

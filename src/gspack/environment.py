@@ -80,7 +80,7 @@ class Environment:
             if results["score"] < self.max_previous_score:
                 results["score"] = self.max_previous_score
                 results["output"] += (f'The score is set to your previous ' +
-                                      f'maximal score of {self.max_previous_score}/{self.max_score}\n')
+                                      f'maximal score of {self.max_previous_score:.2f}/{self.max_score:.2f}\n')
         with open(self.results_path, "w") as f:
             json.dump(results, f, indent=4)
         return None
@@ -114,7 +114,8 @@ class Environment:
 
         elif results is not None:
             # TODO: check that tests are formed correctly?
-            results["output"] = output + f"Executed successfully. Current score: {results['score']}/{self.max_score} \n"
+            results["output"] = output + (f"Executed successfully." +
+                                          f" Current score: {results['score']:.2f}/{self.max_score:.2f} \n")
 
         if self.max_previous_score >= self.max_score and not self.test_student:
             results["output"] = "You already achieved maximum score possible.\n"

@@ -198,7 +198,7 @@ def get_grades(rubric, platform: str, solution: dict):
         test_result["output"] = "Correct."
         test_result["score"] = test["score"]
         total_score += test["score"]
-    results["score"] = total_score
+    results["score"] = round(total_score, 2)
     return results
 
 
