@@ -61,7 +61,7 @@ class Environment:
             results = submission_metadata["results"]
             if results["extra_data"]["success"] and not results["extra_data"]["pretest"]:
                 previous_attempts_counter += 1
-                max_previous_score = max(max_previous_score, submission_metadata["score"])
+                max_previous_score = max(max_previous_score, results["score"])
 
         environment = Environment(
             name=name,
