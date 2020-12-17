@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 
 # Install python
-apt-get install -y python python3 python3-pip python3-dev jq git
+apt-get update
+apt-get install -y python python3 python3-pip python3-dev python3.8 jq git
 # Install gspack dependencies
-pip3 install subprocess32 numpy scipy matplotlib
+python3.8 -m pip install subprocess32 numpy scipy matplotlib ipython
 # Install solution script dependencies
-pip3 install -r /autograder/source/requirements.txt
+python3.8 -m pip install -r /autograder/source/requirements.txt
 # Install gspack
 git clone --branch jupyter https://github.com/aksholokhov/gspack.git
 cd gspack || exit
-python3 setup.py install
+python3.8 setup.py install
 cd ..
 
 matlab=$(jq '.matlab_support' /autograder/source/config.json)

@@ -1,13 +1,9 @@
-import os
 import json
-import shutil
-from zipfile import ZipFile
 import pickle
 from itertools import chain
 
-from gspack.__about__ import __author__, __email__
 from gspack.helpers import UserFailure, GspackFailure
-from gspack.helpers import generate_requirements, all_supported_platforms
+from gspack.helpers import all_supported_platforms
 from gspack.directories import *
 
 
@@ -93,6 +89,7 @@ class Rubric:
                 print(f"-> {test['test_name']}: OK")
         if verbose:
             print("The total number of points is %.2d" % actual_total_score)
+        rubric["total_score"] = actual_total_score
 
         number_of_attempts = rubric.get('number_of_attempts', None)
         if number_of_attempts is not None:
@@ -161,116 +158,3 @@ class Rubric:
         if self.test_suite_values is not None:
             with open(path / TEST_SUITE_VALUES_FILE, "wb") as f:
                 pickle.dump(self.test_suite_values, f)
-
-    def create_archive(self, archive_path: Path):
-        if self.verbose:
-            print("Generating the archive:")
-        program_dir = Path(os.path.dirname(__file__))
-        archive_dir = archive_path.parent.absolute()
-        try:
-            # Copying all the must-have files from the templates (setup.sh, run_autograder, etc)
-            os.mkdir(archive_dir / DIST_DIR)
-
-            for file in AUTOGRADER_ARCHVE_FILES:
-                full_path = program_dir / TEMPLATES_DIR / file
-                if not os.path.exists(full_path):
-                    raise GspackFailure(f"-> {file}: the file {full_path} does not exist." +
-                                        f" It's likely a gspack installation bug." +
-                                        f" You should contact {__author__} ({__email__})" +
-                                        f" or post the issue on the project's Github page.")
-                shutil.copyfile(full_path, archive_dir / DIST_DIR / file)
-                if self.verbose:
-                    print(f"-> {file}: OK")
-
-            # pipreqs package scans the solution and generates the list of (non-standard) Python packages used.
-            try:
-                if self.verbose:
-                    print("Generating requirements for your solution:")
-                generate_reqs_output = generate_requirements(archive_dir,
-                                                             output_path=archive_dir / DIST_DIR / REQUIREMENTS_FILE)
-                if not generate_reqs_output[0].startswith(b"INFO: Successfully saved"):
-                    raise GspackFailure(generate_reqs_output[0])
-                if self.verbose:
-                    print(f"-> {REQUIREMENTS_FILE}: OK")
-
-            except Exception as e:
-                raise e
-
-            config = {}
-
-            if "matlab" in self.supported_platforms:
-                # Adding MATLAB support
-                if self.matlab_credentials is None:
-                    raise UserFailure("MATLAB support is requested but no matlab_credentials path is provided")
-                if self.verbose:
-                    print("Adding MATLAB support...")
-
-                # Checking that all the necessary files are in the credentials folder
-                matlab_folder_path = Path(self.matlab_credentials).expanduser().absolute()
-                if not matlab_folder_path.exists() or not matlab_folder_path.is_dir():
-                    raise UserFailure(
-                        f"matlab_credentials: the directory {matlab_folder_path} does not exist" +
-                        f" or it's not a directory.")
-
-                for file in MATLAB_FILES:
-                    if not (matlab_folder_path / file).exists():
-                        raise UserFailure(f"-> {file}: File {(matlab_folder_path / file).absolute()} does not exist.")
-                    shutil.copyfile(matlab_folder_path / file,
-                                    archive_dir / DIST_DIR / file)
-                    if self.verbose:
-                        print(f"-> {file}: OK")
-
-                # Getting prefix and suffix commands for the run_autograder script, if any
-                run_autograder_prefix = ""
-                run_autograder_suffix = ""
-                if (matlab_folder_path / PROXY_SETTINGS).exists():
-                    with open(matlab_folder_path / PROXY_SETTINGS, "r") as proxy_settings_file:
-                        proxy_settings = json.load(proxy_settings_file)
-                        if proxy_settings['open_tunnel'] is not None:
-                            run_autograder_prefix += proxy_settings['open_tunnel']
-                        if proxy_settings['close_tunnel'] is not None:
-                            run_autograder_suffix += proxy_settings['close_tunnel']
-
-                # Create run_autograder file given the prefix and suffix
-                with open(archive_dir / DIST_DIR / RUN_AUTOGRADER_FILE, 'w') as run_autograder_dest:
-                    run_autograder_dest.write("#!/usr/bin/env bash \n")
-                    if run_autograder_prefix is not None:
-                        run_autograder_dest.write(run_autograder_prefix + "\n")
-                    with open(program_dir / TEMPLATES_DIR / RUN_AUTOGRADER_FILE, 'r') as run_autograder_src:
-                        run_autograder_dest.write(run_autograder_src.read() + "\n")
-                    if run_autograder_suffix is not None:
-                        run_autograder_dest.write(run_autograder_suffix)
-                config["matlab_support"] = 1
-                if self.verbose:
-                    print("MATLAB support added successfully.", end='\n')
-
-            if "jupyter" in self.supported_platforms:
-                config["jupyter_support"] = 1
-
-            # Saving the config.json file
-            json.dump(config, open(archive_dir / DIST_DIR / CONFIG_JSON, 'w'))
-
-            # Checking and adding extra files from extra_files list,
-            if self.verbose and (len(self.extra_files) > 1):
-                print("Find extra files list:")
-
-            for extra_file in self.extra_files:
-                if not (archive_dir / extra_file).exists():
-                    raise UserFailure(f"{extra_file}: can't find {archive_dir / extra_file}")
-                shutil.copyfile(archive_dir / extra_file, archive_dir / DIST_DIR / extra_file)
-                if self.verbose:
-                    print(f"-> {extra_file}: OK")
-
-            # Saving the test_suite and  as a pickle archive.
-            self.save_to(archive_dir / DIST_DIR)
-
-            # Zip all files in DIST directory
-            zip_archive = ZipFile(archive_dir / AUTOGRADER_ZIP, 'w')
-            for extra_file in os.listdir(archive_dir / DIST_DIR):
-                zip_archive.write(archive_dir / DIST_DIR / extra_file, arcname=extra_file)
-            zip_archive.close()
-            return True
-        finally:
-            # Deleting the temporary dist directory
-            if os.path.exists(archive_dir / DIST_DIR):
-                shutil.rmtree(archive_dir / DIST_DIR)

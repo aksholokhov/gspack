@@ -58,7 +58,8 @@ class Environment:
         previous_attempts_counter = 0
         max_previous_score = 0
         for submission_metadata in submission_metadata['previous_submissions']:
-            if submission_metadata["extra_data"]["success"] and not submission_metadata["extra_data"]["pretest"]:
+            results = submission_metadata["results"]
+            if results["extra_data"]["success"] and not results["extra_data"]["pretest"]:
                 previous_attempts_counter += 1
                 max_previous_score = max(max_previous_score, submission_metadata["score"])
 
@@ -95,7 +96,8 @@ class Environment:
                 "output": output,
                 "score": self.max_previous_score,
                 "extra_data": {
-                    "success": True
+                    "success": True,
+                    "pretest": False
                 }
             }
             results["output"] += " ERROR: \n"

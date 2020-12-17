@@ -17,6 +17,7 @@ if __name__ == "__main__":
 
     test_requirements = [
         'pytest',
+        'pandas'
     ]
 
     doc_requirements = []
@@ -54,8 +55,8 @@ if __name__ == "__main__":
         },
         entry_points='''
             [console_scripts]
-            gspack=gspack:create_autograder
-            gsgrade=gspack:grade_locally
+            gspack=gspack:create_autograder_from_terminal
+            gsgrade=gspack:grade_locally_from_terminal
             gsgrade_gradescope=gspack:grade_on_gradescope
         ''',
 

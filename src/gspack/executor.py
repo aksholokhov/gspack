@@ -104,7 +104,8 @@ class Executor:
         return output
 
     def execute_python(self, file_path: Path):
-        code = open(file_path, 'r').read()
+        with open(file_path, 'r') as f:
+            code = f.read()
         module_name = file_path.stem
         module = types.ModuleType(module_name)
         module.__file__ = os.path.abspath(file_path)
@@ -115,11 +116,13 @@ class Executor:
                     with timeout(self.timeout):
                         exec(code, module.__dict__)
                 except Exception as e:
-                    raise UserFailure(f"Error occurred while executing your code: {str(e)}")
+                    raise UserFailure(f"Exception occurred while executing your code: {str(e)}")
             # in case the code opened plots -- close them
             # to avoid buffer overflow
             plt.close()
-            return module.__dict__
+        if os.path.exists(self.log_path):
+            os.remove(self.log_path)
+        return module.__dict__
 
     def execute_jupyter(self, file_path: Path):
         """import a notebook as a module"""
@@ -158,7 +161,8 @@ class Executor:
                         except TimeoutError:
                             raise UserFailure("Code did not finish before timeout")
                         except Exception as e:
-                            raise UserFailure("Exception in code cell %d: %s" % (code_cells_counter, e))
+                            raise UserFailure("Exception occurred while executing your"
+                                              " code in code cell %d: %s" % (code_cells_counter, e))
                         plt.close()
             finally:
                 shell.user_ns = save_user_ns

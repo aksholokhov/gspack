@@ -23,15 +23,18 @@ def grade_on_gradescope():
     return run_grader(Environment.from_gradescope())
 
 
-# @click.command(
-#     help="Grades solution given solution and rubric"
-# )
-# @click.argument(
-#     "submission_path",
-# )
-# @click.argument(
-#     "rubric_path",
-# )
+@click.command(
+    help="Grades solution given solution and rubric"
+)
+@click.argument(
+    "submission_path",
+)
+@click.argument(
+    "rubric_path",
+)
+def grade_locally_from_terminal(submission_path, rubric_path):\
+    return grade_locally(submission_path, rubric_path)
+
 def grade_locally(submission_path, rubric_path):
     submission_path_absolute = Path(submission_path).absolute()
     rubric_path_absolute = Path(rubric_path).absolute()
@@ -75,7 +78,8 @@ def get_submission_file_path(submission_dir: Path, main_file_name=None):
             try:
                 # we don't do anything with the output because at this point we just want to check
                 # that the file is readable.
-                _ = open(submission_dir / f, 'r').read()
+                with open(submission_dir / f, 'r') as f2:
+                    _ = f2.read()
             except Exception as e:
                 raise UserFailure(f"Gradescope is unable to read your file: \n {str(e)} \n" +
                                   f"This might happen if your file is damaged or improperly encoded (not in UTF-8)")
@@ -110,6 +114,7 @@ def get_grades(rubric, platform: str, solution: dict):
         raise GspackFailure("Rubric's values are not attached. Call .fetch_values_for_tests() beforehand.")
 
     pretest = solution.get("pretest")
+    results["extra_data"]["pretest"] = False
     if pretest is not None:
         if not type(pretest) is bool:
             raise UserFailure(f"pretest should be boolean value, but in your submission it's {type(pretest)}")

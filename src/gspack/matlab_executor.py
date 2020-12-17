@@ -42,13 +42,10 @@ def execute_matlab(file_path, matlab_settings):
     try:
         eval(f"eng.{file_path.stem}(nargout=0)")
     except Exception as e:
-        err_msg = f"Execution failed: \n {str(e)}"
+        err_msg = f"Exception occurred while executing your code: \n {str(e)}"
         if str(e) == "MATLAB function cannot be evaluated":
             err_msg += "\n Check that you suppress all console outputs " \
                        "(semicolumn at the end of line), especially in loops."
-        elif str(e).endswith(
-                ' (and maybe others) not assigned during call to "solution>student_solution".\n'):
-            err_msg += "\n Check that you defined the aforementioned variables in your solution file."
         raise UserFailure(err_msg)
     try:
         workspace = {}
