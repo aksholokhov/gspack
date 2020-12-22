@@ -4,6 +4,7 @@ import click
 import numbers
 import numpy as np
 import pickle
+import shutil
 
 from gspack.__about__ import __version__
 from gspack.executor import Executor
@@ -57,6 +58,9 @@ def run_grader(environment):
         environment.max_score = rubric.total_score
         submission_file_path = get_submission_file_path(environment.submission_dir,
                                                         main_file_name=rubric.main_file_name)
+        for extra_file in rubric.extra_files:
+            shutil.copyfile(environment.rubric_path.parent / extra_file, environment.submission_dir / extra_file)
+
         executor = Executor(supported_platforms=rubric.supported_platforms,
                             matlab_config=rubric.matlab_config)
         platform, submission_variables = executor.execute(submission_file_path)
