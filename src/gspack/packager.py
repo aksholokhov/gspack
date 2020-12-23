@@ -68,14 +68,14 @@ def create_autograder(solution, rubric=None, verbose=True):
     :param verbose: whether to print detailed outputs.
     :return: None
     """
-    solution_path = Path(solution).absolute()
+    solution_path = Path(solution).resolve()
     try:
         platform = determine_platform(solution_path)
 
         if rubric is not None:
             # If path to a rubric file is provided then it's loaded first,
             # and the rubric inside the solution file, if any, is ignored.
-            rubric_path = Path(rubric).absolute()
+            rubric_path = Path(rubric).resolve()
             rubric = Rubric.from_json(rubric_path, verbose=verbose, solution_platform=platform)
             # The solution file is executed, the variables from its namespace are stored in solution_variables
             # See the docstring for Executor.execute() for more details.

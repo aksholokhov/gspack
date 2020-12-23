@@ -56,7 +56,7 @@ class Rubric:
     @staticmethod
     def from_json(rubric_path: Path, verbose=False, **kwargs):
         if not rubric_path.exists() or not rubric_path.is_file():
-            raise GspackFailure(f"Rubric file does not exist: \n -> {rubric_path}")
+            raise UserFailure(f"Rubric file does not exist: \n -> {rubric_path}")
         with open(rubric_path, 'r') as f:
             try:
                 rubric = json.load(f)
