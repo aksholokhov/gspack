@@ -93,7 +93,7 @@ class Executor:
         finally:
             os.chdir(my_dir)
         if self.verbose:
-            print(f"Found and executed successfully: \n {file_path}")
+            print(f"Found and executed successfully: \n-> {file_path}")
         return platform, output
 
     def execute_matlab(self, file_path: Path):

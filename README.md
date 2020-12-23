@@ -16,22 +16,19 @@ This tool
 
 ## Installation
 
-To install `gspack` you need to clone this repo to your machine
+To install `gspack` use:
 
 ```shell script
-$ git clone https://github.com/aksholokhov/gspack
+$ pip install gspack
 ```
-and then to install it as a Python package:
-```shell script
-$ cd gspack 
-$ python setup.py install
-```
+
+in your terminal.
 
 ## Usage 
 In order to make your assignment `gspack`-compatible you need to create a brief description of your rubric 
 and put it to the `test_suite` variable.
  
-### Example
+### Example for Python
 Suppose you are writing a solution for a Homework 0 in Python 101 where students are supposed to familiarize themselves with the
  basics of Python:
 
@@ -90,20 +87,28 @@ $ gspack --solution path/to/the/hw0_solution.py
 ```
 and you should see something like this:
 ```shell script
-Found the solution file:
--> /from/root/path/to/the/hw0_solution.py
+Found and executed successfully: 
+-> /path/to/the/hw0_solution.py
 Found the test suite configuration:
--> Addition: ok
--> Power: ok
--> Arrange: ok
+-> Addition: OK
+-> Power: OK
+-> Arrange: OK
+The total number of points is 5.
+Number of attempts: unlimited.
+Supported platforms: python
+Generating the archive:
+-> setup.sh: OK
+-> run_autograder: OK
+Looking for package requirements for your solution:
+-> Generated via pipreqs: OK
 Find extra files list:
--> matrix.csv: ok
-Archive created successfully:
--> /from/root/path/to/the/autograder.zip
+-> matrix.csv: OK
+Archive created successfully: 
+-> /path/to/the/autograder.zip
 ```
 The `autograder.zip` will be in the same directory to your `hw0_solution.py`. This archive contains all necessary
-scripts, extra files listed in `extra_files`, and instructions for GradeScope AutoGrader, so now you can create a new GradeScope programming
-assignment and to upload this archive when prompted. 
+scripts, extra files listed in `extra_files`, and instructions for Gradescope Autograder, so now you can create a new 
+Gradescope programming assignment and to upload this archive when prompted. 
 
 Next, suppose a student writes the following solution for this assignment: 
 ```python

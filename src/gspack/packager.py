@@ -227,7 +227,7 @@ def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=Fa
             json.dump(config, f)
 
         # Checking and adding extra files from extra_files list,
-        if verbose and (len(rubric.extra_files) > 1):
+        if verbose and rubric.extra_files is not None:
             print("Find extra files list:")
 
         for extra_file in rubric.extra_files:

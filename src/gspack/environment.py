@@ -136,7 +136,7 @@ class Environment:
             results["output"] = "You already achieved maximum score possible.\n"
             results["tests"] = []
 
-        if self.attempt_number > self.max_number_of_attempts and not self.test_student:
+        if self.attempt_number > self.max_number_of_attempts > 0 and not self.test_student:
             results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
             results["tests"] = []
 

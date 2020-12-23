@@ -110,7 +110,7 @@ class Rubric:
             if verbose:
                 print(f"-> {test['test_name']}: OK")
         if verbose:
-            print("The total number of points is %.2d" % actual_total_score)
+            print(f"The total number of points is {actual_total_score:.0f}.")
         rubric["total_score"] = actual_total_score
 
         number_of_attempts = rubric.get('number_of_attempts', None)
