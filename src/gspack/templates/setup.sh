@@ -3,9 +3,6 @@
 # Install python
 apt-get update
 apt-get install -y python python3 python3-pip python3-dev python3.7 jq git libxt6
-python3 -m pip install subprocess32 numpy scipy matplotlib
-python3 -m pip install -r /autograder/source/requirements.txt
-python3 -m pip uninstall matlab
 # Install gspack dependencies
 python3.7 -m pip install subprocess32 numpy scipy matplotlib
 # Install solution script dependencies

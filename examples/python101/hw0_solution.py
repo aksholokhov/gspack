@@ -40,6 +40,6 @@ test_suite = [
 # number_of_attempts = 3
 
 extra_files = ["matrix.csv"]
-# supported_platforms = ["matlab", "python"]
+supported_platforms = ["matlab", "python"]
 
 matlab_credentials = "~/Storage/repos/gspack_uw_amath_matlab_credentials"
