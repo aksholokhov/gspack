@@ -1,2 +1,5 @@
 # Run the testing script
-python3 /autograder/source/run_tests.py
+# python3 /autograder/source/run_grader.py
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
+gsgrade_gradescope
