@@ -6,7 +6,8 @@ Programming Assignment Packager for GradeScope Auto Grader.
 
 **TL;DR:** *If you just want to make GradeScope checking correctness of certain values in students coding solutions, and
  you don't have time to learn how to create Gradescope Autograder archives -- this tool is for you. 
- However, if you want to write actual test suites, which test speed/correctness of students functions on arbitrary input -- [gradescope-utils](https://github.com/gradescope/gradescope-utils) is what you need*.
+ However, if you want to write actual test suites, which test speed/correctness of students functions on arbitrary
+ input -- [gradescope-utils](https://github.com/gradescope/gradescope-utils) is what you need*.
 
 This tool
  addresses situations when the class you teach has a certain programming component, but the main 

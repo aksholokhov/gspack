@@ -21,6 +21,9 @@ __all__ = [
 
 __title__ = "gspack"
 __summary__ = "Assignment Packager for the Gradescope Autograder."
+__long_description__ = ("This package is designed to simplify setting" +
+                        " up programming assignments for Gradescope Autograder." +
+                        " See README.md for details and examples.")
 __uri__ = "https://github.com/aksholokhov/gspack"
 
 __version__ = "0.2.0"

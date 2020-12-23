@@ -8,7 +8,7 @@ python3.7 -m pip install subprocess32 numpy scipy matplotlib
 # Install solution script dependencies
 python3.7 -m pip install -r /autograder/source/requirements.txt
 # Install gspack
-git clone --branch jupyter https://github.com/aksholokhov/gspack.git
+git clone https://github.com/aksholokhov/gspack.git
 cd gspack || exit
 python3.7 setup.py install
 cd ..
