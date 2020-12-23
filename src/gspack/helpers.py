@@ -1,4 +1,6 @@
 import subprocess
+import sys
+from contextlib import contextmanager
 
 # These two errors indicate which side is responsible for the failure.
 # UserFailure invokes when the execution is failed because of the student's or instructor's
@@ -29,12 +31,34 @@ def generate_requirements(filepath, output_path):
                                stderr=subprocess.STDOUT)
     return process.communicate()
 
+@contextmanager
+def redirected_output(new_stdout=None, new_stderr=None):
+    save_stdout = sys.stdout
+    save_stderr = sys.stderr
+    if new_stdout is not None:
+        sys.stdout = new_stdout
+    if new_stderr is not None:
+        sys.stderr = new_stderr
+    try:
+        yield None
+    finally:
+        sys.stdout = save_stdout
+        sys.stderr = save_stderr
 
 all_supported_platforms = {
     "python": [".py", ],
     "matlab": [".m"],
     "jupyter": [".ipynb"]
 }
+
+all_rubric_variables = [
+    "test_suite",
+    "total_score",
+    "number_of_attempts",
+    "supported_platforms",
+    "extra_files",
+    "main_file_name",
+]
 
 
 def determine_platform(file_path):

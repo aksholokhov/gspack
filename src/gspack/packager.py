@@ -32,7 +32,7 @@ from gspack.__about__ import __version__
 from gspack.executor import Executor
 from gspack.rubric import Rubric
 from gspack.directories import AUTOGRADER_ZIP
-from gspack.helpers import UserFailure, GspackFailure
+from gspack.helpers import UserFailure, GspackFailure, determine_platform
 
 
 @click.command(
@@ -57,11 +57,17 @@ def create_autograder_from_terminal(solution, rubric, verbose=True):
 def create_autograder(solution, rubric=None, verbose=True):
     solution_path = Path(solution).absolute()
     try:
-        platform, solution_variables = Executor(verbose=True).execute(solution_path)
+        platform = determine_platform(solution_path)
         if rubric is not None:
             rubric_path = Path(rubric).absolute()
             rubric = Rubric.from_json(rubric_path, verbose=verbose, solution_platform=platform)
+            _, solution_variables = Executor(verbose=True,
+                                             matlab_config=rubric.matlab_config).execute(solution_path)
         else:
+            if platform == "matlab":
+                raise UserFailure("You need to provide a rubric file with your MATLAB solution.\n"+
+                                  "Use argument '--rubric path/to/rubric.json'")
+            _, solution_variables = Executor(verbose=True).execute(solution_path)
             rubric = Rubric.from_dict(solution_variables, verbose=verbose, solution_platform=platform)
 
         rubric.fetch_values_for_tests(solution_variables)

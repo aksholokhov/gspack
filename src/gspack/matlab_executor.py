@@ -1,9 +1,10 @@
 import matlab.engine  # This import can only be the first line in the file (*fpm*)
 from matlab.engine import MatlabExecutionError  # it's NOT an error: it will be imported once matlab.engine is.
 import numpy as np
+import io
 
 import matlab
-from gspack.helpers import UserFailure, GspackFailure
+from gspack.helpers import UserFailure, GspackFailure, redirected_output
 
 
 def matlab2python(a):
@@ -25,6 +26,7 @@ def matlab2python(a):
     else:
         raise ValueError(f"Unknown MATLAB type: {type(a)}")
 
+
 def get_from_workspace(workspace, key, default=None):
     try:
         item = workspace[key]
@@ -32,7 +34,8 @@ def get_from_workspace(workspace, key, default=None):
         item = default
     return item
 
-def execute_matlab(file_path, matlab_settings):
+
+def execute_matlab(file_path, matlab_config):
     # Execute MATLAB solution file
     try:
         # it's actually used below: see exec command
@@ -49,7 +52,7 @@ def execute_matlab(file_path, matlab_settings):
         raise UserFailure(err_msg)
     try:
         workspace = {}
-        for name in matlab_settings["variables_to_take"]:
+        for name in matlab_config["variables_to_take"]:
             item = get_from_workspace(eng.workspace, name)
             if item is not None:
                 workspace[name] = matlab2python(item)

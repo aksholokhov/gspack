@@ -30,7 +30,7 @@ class Rubric:
         self.main_file_name = main_file_name
         if "matlab" in self.supported_platforms:
             self.matlab_config = {
-                "variables_to_take": [test["variable_name"] for test in test_suite] + ["pretest"]
+                "variables_to_take": [test["variable_name"] for test in test_suite]
             }
         else:
             self.matlab_config = None
@@ -40,7 +40,11 @@ class Rubric:
         if not rubric_path.exists() or not rubric_path.is_file():
             raise GspackFailure(f"Rubric file does not exist: \n -> {rubric_path}")
         with open(rubric_path, 'r') as f:
-            rubric = json.load(f)
+            try:
+                rubric = json.load(f)
+            except json.JSONDecodeError as e:
+                raise UserFailure(f"Rubric file can not be loaded. Error:\n{e}\n" +
+                                  "Make sure the path is right and the are no typos in JSON syntax.")
         return Rubric.from_dict(rubric, verbose=verbose, **kwargs)
 
     @staticmethod

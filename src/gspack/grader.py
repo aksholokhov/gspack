@@ -36,6 +36,7 @@ def grade_on_gradescope():
 def grade_locally_from_terminal(submission_path, rubric_path):\
     return grade_locally(submission_path, rubric_path)
 
+
 def grade_locally(submission_path, rubric_path):
     submission_path_absolute = Path(submission_path).absolute()
     rubric_path_absolute = Path(rubric_path).absolute()
@@ -60,7 +61,7 @@ def run_grader(environment):
                                                         main_file_name=rubric.main_file_name)
         for extra_file in rubric.extra_files:
             shutil.copyfile(environment.rubric_path.parent / extra_file, environment.submission_dir / extra_file)
-
+        rubric.matlab_config["variables_to_take"].append("pretest")
         executor = Executor(supported_platforms=rubric.supported_platforms,
                             matlab_config=rubric.matlab_config)
         platform, submission_variables = executor.execute(submission_file_path)

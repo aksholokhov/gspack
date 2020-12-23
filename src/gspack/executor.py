@@ -11,23 +11,8 @@ from IPython.core.interactiveshell import InteractiveShell
 from matplotlib import pyplot as plt
 from nbformat import read
 
-from gspack.helpers import UserFailure, GspackFailure
-from gspack.helpers import determine_platform, all_supported_platforms
-
-
-@contextmanager
-def redirected_output(new_stdout=None, new_stderr=None):
-    save_stdout = sys.stdout
-    save_stderr = sys.stderr
-    if new_stdout is not None:
-        sys.stdout = new_stdout
-    if new_stderr is not None:
-        sys.stderr = new_stderr
-    try:
-        yield None
-    finally:
-        sys.stdout = save_stdout
-        sys.stderr = save_stderr
+from gspack.helpers import UserFailure, GspackFailure, redirected_output
+from gspack.helpers import determine_platform, all_supported_platforms, all_rubric_variables
 
 
 @contextmanager
@@ -60,7 +45,12 @@ class Executor:
                  matlab_config=None,
                  verbose=False):
         self.supported_platforms = supported_platforms
-        self.matlab_config = matlab_config
+        if matlab_config is None:
+            self.matlab_config = {
+                "variables_to_take": all_rubric_variables
+            }
+        else:
+            self.matlab_config = matlab_config
         self.log_path = "execution_log_%s.txt"
         self.timeout = timeout_for_execution
         self.verbose = verbose
@@ -98,7 +88,8 @@ class Executor:
         try:
             from .matlab_executor import execute_matlab as execute_matlab_ext
             with timeout(self.timeout):
-                output = execute_matlab_ext(file_path, matlab_settings=self.matlab_config)
+                output = execute_matlab_ext(file_path,
+                                            matlab_config=self.matlab_config)
         except TimeoutError:
             return UserFailure("Code did not finish before timeout.")
         return output
