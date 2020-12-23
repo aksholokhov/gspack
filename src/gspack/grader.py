@@ -1,17 +1,35 @@
-import os
-from pathlib import Path
-import click
+#     GSPack: Programming Assignment Packager for GradeScope AutoGrader
+#     Copyright (C) 2020  Aleksei Sholokhov
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
 import numbers
-import numpy as np
+import os
 import pickle
 import shutil
+from pathlib import Path
+
+import click
+import numpy as np
 
 from gspack.__about__ import __version__
-from gspack.executor import Executor
-from gspack.rubric import Rubric
-from gspack.environment import Environment
-from gspack.helpers import UserFailure, GspackFailure, determine_platform
 from gspack.directories import TEST_SUITE_VALUES_FILE, GS_RESULTS_JSON
+from gspack.environment import Environment
+from gspack.executor import Executor
+from gspack.helpers import UserFailure, GspackFailure, determine_platform
+from gspack.rubric import Rubric
 
 
 @click.command(

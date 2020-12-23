@@ -14,25 +14,21 @@
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import os
-
-from pathlib import Path
-import click
-
-import os
 import json
+import os
 import shutil
 from zipfile import ZipFile
+
+import click
+
 from gspack.__about__ import __author__, __email__
-from gspack.helpers import generate_requirements
-
-from gspack.directories import *
-
 from gspack.__about__ import __version__
-from gspack.executor import Executor
-from gspack.rubric import Rubric
+from gspack.directories import *
 from gspack.directories import AUTOGRADER_ZIP
+from gspack.executor import Executor
 from gspack.helpers import UserFailure, GspackFailure, determine_platform
+from gspack.helpers import generate_requirements
+from gspack.rubric import Rubric
 
 
 @click.command(
@@ -51,54 +47,97 @@ from gspack.helpers import UserFailure, GspackFailure, determine_platform
     'solution'
 )
 def create_autograder_from_terminal(solution, rubric, verbose=True):
+    """
+    Wrapper function for creating autograder archives from a terminal.
+
+    :param solution: path to solution file
+    :param rubric: path to a rubric file (.json). If not provided then the rubric is assumed to be in the solution file.
+    :param verbose: whether to print detailed outputs.
+    :return: None
+    """
     return create_autograder(solution, rubric, verbose)
 
 
 def create_autograder(solution, rubric=None, verbose=True):
+    """
+    Creates autograder archive based on the solution. The archive is named "autograder.zip", and
+    is placed alongside the solution file.
+
+    :param solution: path to solution file
+    :param rubric: path to a rubric file (.json). If not provided then the rubric is assumed to be in the solution file.
+    :param verbose: whether to print detailed outputs.
+    :return: None
+    """
     solution_path = Path(solution).absolute()
     try:
         platform = determine_platform(solution_path)
+
         if rubric is not None:
+            # If path to a rubric file is provided then it's loaded first,
+            # and the rubric inside the solution file, if any, is ignored.
             rubric_path = Path(rubric).absolute()
             rubric = Rubric.from_json(rubric_path, verbose=verbose, solution_platform=platform)
+            # The solution file is executed, the variables from its namespace are stored in solution_variables
+            # See the docstring for Executor.execute() for more details.
             _, solution_variables = Executor(verbose=True,
                                              matlab_config=rubric.matlab_config).execute(solution_path)
         else:
             if platform == "matlab":
-                raise UserFailure("You need to provide a rubric file with your MATLAB solution.\n"+
+                # For MATLAB solutions a separate rubric file has to be provided
+                # since there is no way to put it inside the solution file itself.
+                raise UserFailure("You need to provide a rubric file with your MATLAB solution.\n" +
                                   "Use argument '--rubric path/to/rubric.json'")
             _, solution_variables = Executor(verbose=True).execute(solution_path)
+            # When rubric is not provided as a separate file, gspack looks for it in the solution file's namespace.
             rubric = Rubric.from_dict(solution_variables, verbose=verbose, solution_platform=platform)
 
+        # Scan the rubric and pull the values of variables from test suite from solution_variables.
+        # These values are going to be saved to autograder.zip alongside with the rubric.
         rubric.fetch_values_for_tests(solution_variables)
         create_archive(solution_path.parent / AUTOGRADER_ZIP, rubric=rubric, platform=platform, verbose=verbose)
+
     except UserFailure as e:
+        # This error indicates that something went wrong because the user did something wrong,
+        # and gspack was able to identify what exactly and provided a suggestion
+        # in the error's message.
         print("ERROR: The process is aborted, see the error below:")
         print(e)
         return None
     except (GspackFailure, Exception) as e:
-        print("ERROR: The process is aborted due to unusual reason. Contact the developers.")
-        raise e
-        # print(e)
-        # return None
+        # This error indicates that something went out of gspack's control. It likely indicates a bug in gspack.
+        print("ERROR: The process is aborted due to an unusual reason. Contact the developers.")
+        # raise e
+        print(e)
+        return None
     print(f"Archive created successfully: \n-> {solution_path.parent / AUTOGRADER_ZIP}")
 
 
-def create_archive(archive_path: Path, rubric: Rubric, platform, verbose=False):
+def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=False):
+    """
+    Creates a Gradescope autograder archive (autograder.zip).
+
+    :param archive_path: path where archive should be saved.
+    :param rubric: rubric with attached true values.
+    :param platform: which language was used for writing the solution file
+    :param verbose: whether to print detailed outputs.
+    :return: None. Saves the archive to archive_path or aborts.
+    """
     if verbose:
         print("Generating the archive:")
     program_dir = Path(os.path.dirname(__file__))
     archive_dir = archive_path.parent.absolute()
     try:
-        # Copying all the must-have files from the templates (setup.sh, run_autograder, etc)
+        # This function puts all the files for the archive to a newly created DIST_DIR and
+        # deletes it once it's packed into autograder.zip
         os.mkdir(archive_dir / DIST_DIR)
 
-        for file in AUTOGRADER_ARCHVE_FILES:
+        # Copy necessary files (setup.sh, run_autograder). See AUTOGRADER_ARCHIVE_FILES.
+        for file in AUTOGRADER_ARCHIVE_FILES:
             full_path = program_dir / TEMPLATES_DIR / file
             if not os.path.exists(full_path):
                 raise GspackFailure(f"-> {file}: the file {full_path} does not exist." +
                                     f" It's likely a gspack installation bug." +
-                                    f" You should contact {__author__} ({__email__})" +
+                                    f" You should contact authors" +
                                     f" or post the issue on the project's Github page.")
             shutil.copyfile(full_path, archive_dir / DIST_DIR / file)
             if verbose:
@@ -119,6 +158,7 @@ def create_archive(archive_path: Path, rubric: Rubric, platform, verbose=False):
             if verbose:
                 print(f"-> {REQUIREMENTS_FILE}: OK")
         elif platform == "jupyter":
+            # TODO: implement requirements for jupyter
             if verbose:
                 print("Package requirements are not identified: add them manually to requirements.txt")
         else:

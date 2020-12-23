@@ -1,8 +1,24 @@
-from gspack.directories import *
+#     GSPack: Programming Assignment Packager for GradeScope AutoGrader
+#     Copyright (C) 2020  Aleksei Sholokhov
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import json
 
-from gspack.helpers import UserFailure
+from gspack.directories import *
 from gspack.directories import TEST_STUDENT_NAME, TEST_STUDENT_EMAIL
+from gspack.helpers import UserFailure
 
 
 class Environment:
@@ -113,7 +129,6 @@ class Environment:
                 results["extra_data"]["success"] = False
 
         elif results is not None:
-            # TODO: check that tests are formed correctly?
             results["output"] = output + (f"Executed successfully." +
                                           f" Current score: {results['score']:.2f}/{self.max_score:.2f} \n")
 
