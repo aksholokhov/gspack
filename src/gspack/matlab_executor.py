@@ -46,9 +46,6 @@ def execute_matlab(file_path, matlab_config):
         eval(f"eng.{file_path.stem}(nargout=0)")
     except Exception as e:
         err_msg = f"Exception occurred while executing your code: \n {str(e)}"
-        if str(e) == "MATLAB function cannot be evaluated":
-            err_msg += "\n Check that you suppress all console outputs " \
-                       "(semicolumn at the end of line), especially in loops."
         raise UserFailure(err_msg)
     try:
         workspace = {}

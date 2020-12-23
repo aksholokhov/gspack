@@ -39,7 +39,6 @@ if __name__ == "__main__":
 
         package_data={
             "gspack": ["src/gspack/templates/run_autograder",
-                       "src/gspack/templates/run_tests.py",
                        "src/gspack/templates/setup.sh",
                        ]
         },
@@ -62,3 +61,9 @@ if __name__ == "__main__":
 
         zip_safe=False,
     )
+    print("\nNB: For MATLAB support: \n "+
+          "0) Make sure you have MATLAB installed. \n " +
+          "1) Install MATLAB Engine Python API. Instruction: \n " +
+          " -> https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html \n "
+          f"2) Obtain Gradescope MATLAB Credentials directory from your department. \n "
+          f" -> For Applied Math at UW: email {about['__author__']} ({about['__email__']}) to get the instructions.")
