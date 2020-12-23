@@ -218,9 +218,13 @@ def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=Fa
             config["matlab_support"] = 1
             if verbose:
                 print("MATLAB support added successfully.", end='\n')
+        else:
+            config["matlab_support"] = 0
 
         if "jupyter" in rubric.supported_platforms:
             config["jupyter_support"] = 1
+        else:
+            config["jupyter_support"] = 0
 
         # Saving the config.json file
         with open(archive_dir / DIST_DIR / CONFIG_JSON, 'w') as f:

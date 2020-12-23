@@ -132,13 +132,13 @@ class Environment:
             results["output"] = output + (f"Executed successfully." +
                                           f" Current score: {results['score']:.2f}/{self.max_score:.2f} \n")
 
-        if self.max_previous_score >= self.max_score and not self.test_student:
-            results["output"] = "You already achieved maximum score possible.\n"
-            results["tests"] = []
+            if self.max_previous_score >= self.max_score and not self.test_student:
+                results["output"] = "You already achieved maximum score possible.\n"
+                results["tests"] = []
 
-        if self.attempt_number > self.max_number_of_attempts > 0 and not self.test_student:
-            results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
-            results["tests"] = []
+            if self.attempt_number > self.max_number_of_attempts > 0 and not self.test_student:
+                results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
+                results["tests"] = []
 
         results["score"] = round(results["score"], 2)
         self.write_down_and_exit(results)
