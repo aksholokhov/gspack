@@ -26,7 +26,6 @@ from gspack.helpers import all_supported_platforms
 class Rubric:
     def __init__(self,
                  test_suite=None,
-                 total_score=10,
                  number_of_attempts=-1,
                  supported_platforms=None,
                  matlab_credentials=None,
@@ -38,7 +37,7 @@ class Rubric:
                  **kwargs):
         self.test_suite = test_suite
         self.test_suite_values = test_suite_values
-        self.total_score = round(total_score, 2)
+        self.total_score = [test["score"] for test in test_suite]
         self.number_of_attempts = number_of_attempts
         self.supported_platforms = supported_platforms
         self.matlab_credentials = matlab_credentials
@@ -100,7 +99,7 @@ class Rubric:
                                       " You need to either define scores for each test or define total_score.")
                 else:
                     score_from_rubric = float(test['score'])
-                    if abs(score_from_rubric - score_per_test) > 1e-2:
+                    if abs(score_from_rubric - score_per_test) > 1e-2 and score_per_test is not None:
                         raise UserFailure(
                             f"{test['test_name']}: score for this test is not consistent with total_score:" +
                             f" {score_from_rubric:.2f} vs {score_per_test:.2f} ({total_score}/{len(test_suite)})."
@@ -111,7 +110,6 @@ class Rubric:
                 print(f"-> {test['test_name']}: OK")
         if verbose:
             print(f"The total number of points is {actual_total_score:.0f}.")
-        rubric["total_score"] = actual_total_score
 
         number_of_attempts = rubric.get('number_of_attempts', None)
         if number_of_attempts is not None:
@@ -175,7 +173,6 @@ class Rubric:
     def save_to(self, path):
         dict_to_save = {
             "test_suite": self.test_suite,
-            "total_score": self.total_score,
             "number_of_attempts": self.number_of_attempts,
             "supported_platforms": self.supported_platforms,
             "extra_files": self.extra_files,
