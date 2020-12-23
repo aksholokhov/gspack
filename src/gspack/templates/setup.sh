@@ -2,11 +2,16 @@
 
 # Install python
 apt-get update
-apt-get install -y python python3 python3-pip python3-dev python3.7 jq git
+apt-get install -y python python3 python3-pip python3-dev python3.7 jq git libxt6
+python3 -m pip install subprocess32 numpy scipy matplotlib
+python3 -m pip install -r /autograder/source/requirements.txt
+python3 -m pip uninstall matlab
 # Install gspack dependencies
 python3.7 -m pip install subprocess32 numpy scipy matplotlib
 # Install solution script dependencies
 python3.7 -m pip install -r /autograder/source/requirements.txt
+# Sometimes pipreqs erroneously pulls matlab into requirements.txt
+python3.7 -m pip uninstall matlab
 # Install gspack
 git clone https://github.com/aksholokhov/gspack.git
 cd gspack || exit
@@ -15,6 +20,7 @@ cd ..
 
 matlab=$(jq '.matlab_support' /autograder/source/config.json)
 if [ $matlab = 1 ]; then
+  echo "Adding MATLAB components"
   # Set up MATLAB, if needed
   chmod +x /autograder/source/matlab_setup.sh
   /autograder/source/matlab_setup.sh
@@ -22,6 +28,7 @@ fi
 
 jupyter=$(jq '.jupyter_support' /autograder/source/config.json)
 if [ $jupyter = 1 ]; then
+    echo "Adding Jupyter components"
     python3.7 -m pip install ipython nbformat
 fi
 
