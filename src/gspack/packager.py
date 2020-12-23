@@ -143,26 +143,33 @@ def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=Fa
             if verbose:
                 print(f"-> {file}: OK")
 
-        # pipreqs package scans the solution and generates the list of (non-standard) Python packages used.
-        if platform == "python":
-            if verbose:
-                print("Generating package requirements for your solution:")
-            generate_reqs_output = generate_requirements(archive_dir,
-                                                         output_path=archive_dir / DIST_DIR / REQUIREMENTS_FILE)
-            if not generate_reqs_output[0].startswith(b"INFO: Successfully saved"):
-                raise GspackFailure("Extra package requirements identification FAILED. " +
-                                    "Make sure all solution files in the solution's " +
-                                    "directory (including subdirectories), " +
-                                    "can be executed without errors, and there are no other," +
-                                    " irrelevant python files in the solution directory.")
-            if verbose:
-                print(f"-> {REQUIREMENTS_FILE}: OK")
-        elif platform == "jupyter":
-            # TODO: implement requirements for jupyter
-            if verbose:
-                print("Package requirements are not identified: add them manually to requirements.txt")
+        if verbose:
+            print("Looking for package requirements for your solution:")
+        if rubric.requirements is not None:
+            with open(archive_dir / DIST_DIR / REQUIREMENTS_FILE, "w") as f:
+                f.write("\n".join(rubric.requirements))
+                print("-> saved from 'requirements' variable, OK.")
         else:
-            pass
+            # pipreqs package scans the solution and generates the list of (non-standard) Python packages used.
+            if platform == "python":
+                generate_reqs_output = generate_requirements(archive_dir,
+                                                             output_path=archive_dir / DIST_DIR / REQUIREMENTS_FILE)
+                if not generate_reqs_output[0].startswith(b"INFO: Successfully saved"):
+                    raise GspackFailure("Extra package requirements identification FAILED. " +
+                                        "Make sure all solution files in the solution's " +
+                                        "directory (including subdirectories), " +
+                                        "can be executed without errors, and there are no other," +
+                                        " irrelevant python files in the solution directory.")
+                if verbose:
+                    print(f"-> Generated via pipreqs: OK")
+            elif platform == "jupyter":
+                if verbose:
+                    print("-> Not provided, assumed no extra packages are needed")
+            elif platform == "matlab":
+                print("-> If you need extra MATLAB toolboxes for your solution contact your department " +
+                      "to make sure they're added to the department's MATLAB distribution for Gradescope.")
+            else:
+                pass
 
         config = {}
 

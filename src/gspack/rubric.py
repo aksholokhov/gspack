@@ -34,6 +34,7 @@ class Rubric:
                  test_suite_values=None,
                  verbose=False,
                  main_file_name=None,
+                 requirements=None,
                  **kwargs):
         self.test_suite = test_suite
         self.test_suite_values = test_suite_values
@@ -44,6 +45,7 @@ class Rubric:
         self.extra_files = extra_files
         self.verbose = verbose
         self.main_file_name = main_file_name
+        self.requirements = requirements
         if "matlab" in self.supported_platforms:
             self.matlab_config = {
                 "variables_to_take": [test["variable_name"] for test in test_suite]
@@ -151,6 +153,12 @@ class Rubric:
             if not type(extra_files) is list:
                 raise UserFailure("extra_files should be a list of file names"
                                   " located in the same directory as the solution")
+
+        requirements = rubric.get("requirements", None)
+        if requirements is not None:
+            if not type(requirements) is list:
+                raise UserFailure("requirements variables should be a list of package names")
+
         return True
 
     def fetch_values_for_tests(self, variables: dict):
