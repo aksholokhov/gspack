@@ -37,7 +37,7 @@ class Rubric:
                  **kwargs):
         self.test_suite = test_suite
         self.test_suite_values = test_suite_values
-        self.total_score = [test["score"] for test in test_suite]
+        self.total_score = sum([test["score"] for test in test_suite])
         self.number_of_attempts = number_of_attempts
         self.supported_platforms = supported_platforms
         self.matlab_credentials = matlab_credentials
