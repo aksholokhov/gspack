@@ -42,7 +42,7 @@ if __name__ == "__main__":
         },
         include_package_data=True,
 
-        python_requires='>3.5.2',
+        python_requires='>=3.7',
         install_requires=install_requirements,
         tests_require=test_requirements,
         extras_require={
