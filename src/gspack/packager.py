@@ -143,6 +143,7 @@ def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=Fa
             if verbose:
                 print(f"-> {file}: OK")
 
+        # Generate requirements file. It's either in 'requirements' variable or it can be generated via pipreqs.
         if verbose:
             print("Looking for package requirements for your solution:")
         if rubric.requirements is not None:
@@ -171,22 +172,25 @@ def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=Fa
             else:
                 pass
 
+        # This file will contain all the information that setup.sh needs during
+        # the Docker initialization process.
         config = {}
 
         if "matlab" in rubric.supported_platforms:
-            # Adding MATLAB support
+            # Add MATLAB support
             if rubric.matlab_credentials is None:
                 raise UserFailure("MATLAB support is requested but no matlab_credentials path is provided")
             if verbose:
                 print("Adding MATLAB support...")
 
-            # Checking that all the necessary files are in the credentials folder
+            # Check that all the necessary files are in the credentials folder
             matlab_folder_path = Path(rubric.matlab_credentials).expanduser().absolute()
             if not matlab_folder_path.exists() or not matlab_folder_path.is_dir():
                 raise UserFailure(
                     f"matlab_credentials: the directory {matlab_folder_path} does not exist" +
                     f" or it's not a directory.")
 
+            # Move all necessary files to the archive's directory
             for file in MATLAB_FILES:
                 if not (matlab_folder_path / file).exists():
                     raise UserFailure(f"-> {file}: File {(matlab_folder_path / file).absolute()} does not exist.")
@@ -195,7 +199,11 @@ def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=Fa
                 if verbose:
                     print(f"-> {file}: OK")
 
-            # Getting prefix and suffix commands for the run_autograder script, if any
+            # Getting prefix and suffix commands for the run_autograder script, if any.
+            # These _prefix and _suffix normally contain all the commands
+            # which need to be executed before and after the main
+            # grading script kicks in. For instance, opening and closing a SSH tunnels to
+            # MATLAB license servers, if used.
             run_autograder_prefix = ""
             run_autograder_suffix = ""
             if (matlab_folder_path / PROXY_SETTINGS).exists():
@@ -226,16 +234,17 @@ def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=Fa
                 with open(program_dir / TEMPLATES_DIR / RUN_AUTOGRADER_FILE, 'r') as run_autograder_src:
                     run_autograder_dest.write(run_autograder_src.read() + "\n")
 
+        # Add Jupyter Notebooks support.
         if "jupyter" in rubric.supported_platforms:
             config["jupyter_support"] = 1
         else:
             config["jupyter_support"] = 0
 
-        # Saving the config.json file
+        # save the config.json file
         with open(archive_dir / DIST_DIR / CONFIG_JSON, 'w') as f:
             json.dump(config, f)
 
-        # Checking and adding extra files from extra_files list,
+        # Check and add extra files from extra_files list,
         if verbose and rubric.extra_files is not None:
             print("Find extra files list:")
 
@@ -246,7 +255,7 @@ def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=Fa
             if verbose:
                 print(f"-> {extra_file}: OK")
 
-        # Saving the test_suite and  as a pickle archive.
+        # save the rubric and true values from the rubric to the archive's folder.
         rubric.save_to(archive_dir / DIST_DIR)
 
         # Zip all files in DIST directory
@@ -256,6 +265,6 @@ def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=Fa
         zip_archive.close()
         return True
     finally:
-        # Deleting the temporary dist directory
+        # Delete the temporary dist directory
         if os.path.exists(archive_dir / DIST_DIR):
             shutil.rmtree(archive_dir / DIST_DIR)
