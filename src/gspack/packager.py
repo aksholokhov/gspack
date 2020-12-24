@@ -220,6 +220,11 @@ def create_archive(archive_path: Path, rubric: Rubric, platform: str, verbose=Fa
                 print("MATLAB support added successfully.", end='\n')
         else:
             config["matlab_support"] = 0
+            # Create run_autograder file only adding bash prefix to the template
+            with open(archive_dir / DIST_DIR / RUN_AUTOGRADER_FILE, 'w') as run_autograder_dest:
+                run_autograder_dest.write("#!/usr/bin/env bash \n")
+                with open(program_dir / TEMPLATES_DIR / RUN_AUTOGRADER_FILE, 'r') as run_autograder_src:
+                    run_autograder_dest.write(run_autograder_src.read() + "\n")
 
         if "jupyter" in rubric.supported_platforms:
             config["jupyter_support"] = 1

@@ -79,7 +79,6 @@ def run_grader(environment):
                                                         main_file_name=rubric.main_file_name)
         for extra_file in rubric.extra_files:
             shutil.copyfile(environment.rubric_path.parent / extra_file, environment.submission_dir / extra_file)
-        rubric.matlab_config["variables_to_take"].append("pretest")
         executor = Executor(supported_platforms=rubric.supported_platforms,
                             matlab_config=rubric.matlab_config)
         platform, submission_variables = executor.execute(submission_file_path)
@@ -135,14 +134,6 @@ def get_grades(rubric, platform: str, solution: dict):
         raise GspackFailure("Rubric is not initialized properly: test_suite is None")
     if rubric.test_suite_values is None:
         raise GspackFailure("Rubric's values are not attached. Call .fetch_values_for_tests() beforehand.")
-
-    pretest = solution.get("pretest")
-    results["extra_data"]["pretest"] = False
-    if pretest is not None:
-        if not type(pretest) is bool:
-            raise UserFailure(f"pretest should be boolean value, but in your submission it's {type(pretest)}")
-        if pretest:
-            results["extra_data"]["pretest"] = True
 
     for i, test in enumerate(rubric.test_suite):
         true_answer = rubric.test_suite_values[test["variable_name"]]
