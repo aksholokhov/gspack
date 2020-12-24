@@ -23,8 +23,15 @@ import io
 import matlab
 from gspack.helpers import UserFailure, GspackFailure, redirected_output
 
+from pathlib import Path
+
 
 def matlab2python(a):
+    """
+    Converts a MATLAB type to a Python type
+    :param a: MATLAB variable to convert
+    :return: Python representation of a: bool, float, string, or a Numpy array, depending on a.
+    """
     matlab_array_types = (matlab.double,
                           matlab.single,
                           matlab.int8,
@@ -44,7 +51,16 @@ def matlab2python(a):
         raise ValueError(f"Unknown MATLAB type: {type(a)}")
 
 
-def get_from_workspace(workspace, key, default=None):
+def get_from_workspace(workspace, key: str, default=None):
+    """
+    Pulls a variable from workspace by it's name (`key`), and returns default if failed.
+    Designed to simulate Python dictionary's .get() behaviour.
+
+    :param workspace: MATLAB workspace.
+    :param key: variable's name
+    :param default: value which will be returned if `key` is not defined
+    :return: MATLAB variable with the name "key", if defined, otherwise returns `default`.
+    """
     try:
         item = workspace[key]
     except MatlabExecutionError:
@@ -52,21 +68,36 @@ def get_from_workspace(workspace, key, default=None):
     return item
 
 
-def execute_matlab(file_path, matlab_config):
-    # Execute MATLAB solution file
+def execute_matlab(file_path: Path, matlab_config: dict):
+    """
+    Executes MATLAB solution script and returns variables from it's namespace.
+
+    :param file_path: Path to the script
+    :param matlab_config: Dictionary with additional parameters:
+
+        - `variables_to_take`: list of variables' names which should be pulled from MATLAB's namespace
+
+    :return: Dictionary "name" - "value" for variables listed in matlab_config["variables_to_take"]
+    """
     try:
-        # it's actually used below: see exec command
+        # Launch MATLAB engione
         eng = matlab.engine.start_matlab()
     except Exception as e:
         raise GspackFailure(f"MATLAB Engine failed to start with the following error: \n {e}.")
     try:
+        # Execute MATLAB script
         eval(f"eng.{file_path.stem}(nargout=0)")
     except Exception as e:
         err_msg = f"Exception occurred while executing your code: \n {str(e)}"
         raise UserFailure(err_msg)
     try:
+        # pull variables from MATLAB workspace `eng.workspace` into `workspace` dict.
+        # The reason to explicitly require the list of variables' names is because
+        # MATLAB engine and all its components die once the execution leaves this scope,
+        # so `return eng.workspace` would not work.
         workspace = {}
-        for name in matlab_config["variables_to_take"]:
+        variables_to_take = matlab_config.get("variables_to_take", ())
+        for name in variables_to_take:
             item = get_from_workspace(eng.workspace, name)
             if item is not None:
                 workspace[name] = matlab2python(item)
