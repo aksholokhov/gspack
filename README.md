@@ -22,6 +22,14 @@ on arbitrary input -- [gradescope-utils](https://github.com/gradescope/gradescop
 
 ## Installation
 
+> **_Windows:_**  This program was tested on Windows 10 with Anaconda3. See the instructions at:
+> 
+> https://www.anaconda.com/products/individual
+> 
+> Please use "Command Prompt (Anaconda3)" as your terminal.
+>
+> **_MacOS:_** Use of Anaconda3 is recommended.
+
 To install `gspack` use:
 
 ```shell script
