@@ -140,6 +140,7 @@ class Rubric:
         if verbose:
             print("Found the test suite configuration:")
 
+        # Recovers individual scores based on `total_score`, if needed.
         actual_total_score = 0
         for test in test_suite:
             if (score_per_test is None) ^ (test.get('score', None) is None):

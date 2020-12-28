@@ -17,6 +17,7 @@
 
 from pathlib import Path
 
+# Names of files from autograder archive.
 DIST_DIR = Path("dist")
 TEMPLATES_DIR = Path("templates")
 REQUIREMENTS_FILE = "requirements.txt"
@@ -37,7 +38,7 @@ MATLAB_NETWORK_LIC_FILE = "network.lic"
 PROXY_SETTINGS = "proxy_settings.json"
 MATLAB_FILES = [MATLAB_INSTALL_FILE, RSA_KEY, KNOWN_HOSTS_FILE, MATLAB_NETWORK_LIC_FILE, PROXY_SETTINGS]
 
-# Gradescope structure
+# Gradescope file structure
 GS_HOME_DIR = Path("/autograder")
 GS_SOURCE_DIR = GS_HOME_DIR / "source"
 GS_SUBMISSION_DIR = GS_HOME_DIR / "submission"
@@ -45,6 +46,7 @@ GS_RESULTS_DIR = GS_HOME_DIR / "results"
 GS_RESULTS_JSON = GS_RESULTS_DIR / "results.json"
 GS_SUBMISSION_METADATA_JSON = GS_HOME_DIR / "submission_metadata.json"
 
+# Test and Default students credentials
 TEST_STUDENT_NAME = "Test Student"
 TEST_STUDENT_EMAIL = "test_student@gspack.com"
 DEFAULT_STUDENT_NAME = "John Smith"

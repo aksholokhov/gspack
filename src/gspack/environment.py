@@ -22,6 +22,11 @@ from gspack.helpers import UserFailure
 
 
 class Environment:
+    """
+    This class administers all interactions of `grader` with the outer world:
+    accessing meta-data, student credentials, output directories etc.
+    """
+
     def __init__(self,
                  name=TEST_STUDENT_NAME,
                  email=TEST_STUDENT_EMAIL,
@@ -35,7 +40,19 @@ class Environment:
                  results_path=None,
                  test_values_path=None):
         """
-        Creates an instance of Environment class
+        Creates an instance of Environment
+
+        :param name: Student's name
+        :param email: Student's email
+        :param attempt_number: number of the current submission attempt
+        :param max_number_of_attempts: maximal number of attempts from Rubric
+        :param max_score: maximal score from Rubric
+        :param max_previous_score: maximal previous score archived by this student
+        :param submission_dir: path to submission directory
+        :param submission_path: path to the main file in submission directory
+        :param rubric_path: path to the rubric JSON file
+        :param results_path: where to write a JSON file with results
+        :param test_values_path: path to a pickle file with true values from the rubric's test suite
         """
         self.name = name
         self.email = email
@@ -55,6 +72,11 @@ class Environment:
 
     @staticmethod
     def from_gradescope():
+        """
+        Creates an instance of Environment for Gradescope. Assumes the structure of a Gradescope server.
+
+        :return: an instance of Environment configured to work on a Gradescope server.
+        """
         with open(GS_SUBMISSION_METADATA_JSON, 'r') as metadata_file:
             submission_metadata = json.load(metadata_file)
 
@@ -92,7 +114,24 @@ class Environment:
         return environment
 
     def write_down_and_exit(self, results, keep_maximal_score=True):
+        """
+        Writes `results` to `self.results_path`. Meant to be the end stage of both `self.write_results()`
+        and `self.write_error()`.
+
+        :param results: a dictionary formatted according to Gradescope's requirements for `results.json` file.
+        :param keep_maximal_score: whether to keep the maximal previous score as current.
+        :return: None
+        """
+        output = (f"Attempt {self.attempt_number}" +
+                  (f"/{self.max_number_of_attempts}\n" if (self.max_number_of_attempts > 0
+                                                           and not self.test_student
+                                                           ) else "/Unlimited\n"))
+        # Put the information with the attempt number to the beginning on the output message.
+        results["output"] = output + results["output"]
+
         if keep_maximal_score:
+            # Let student know if the system kept his previous maximal score
+            # because this submission's score is not an improvement.
             if results["score"] < self.max_previous_score:
                 results["score"] = self.max_previous_score
                 results["output"] += (f'The score is set to your previous ' +
@@ -101,44 +140,57 @@ class Environment:
             json.dump(results, f, indent=4)
         return None
 
-    def write_results(self, results=None, exception=None):
+    def write_results(self, results: dict):
+        """
+        Forms results.json based on `results` -- partially formed results.json with
+        `tests` field filled in.
 
-        output = (f"Attempt {self.attempt_number}" +
-                  (f"/{self.max_number_of_attempts}\n" if (self.max_number_of_attempts > 0
-                                                           and not self.test_student
-                                                           ) else "/Unlimited\n"))
-        if exception is not None:
-            results = {
-                "output": output,
-                "score": self.max_previous_score,
-                "extra_data": {
-                    "success": True,
-                    "pretest": False
-                }
+        :param results: dictionary with `tests` field filled in with grading results.
+        :return: None
+        """
+
+        results["output"] = (f"Executed successfully." +
+                             f" Current score: {results['score']:.2f}/{self.max_score:.2f} \n")
+
+        if self.max_previous_score >= self.max_score and not self.test_student:
+            results["output"] = "You already achieved maximum score possible.\n"
+            results["tests"] = []
+
+        if self.attempt_number > self.max_number_of_attempts > 0 and not self.test_student:
+            results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
+            results["tests"] = []
+
+        results["score"] = round(results["score"], 2)
+        self.write_down_and_exit(results)
+        return None
+
+    def write_exception(self, exception: Exception):
+        """
+        Forms results.json based on `exception`. This exception can be a result of
+        either student's actions, in which case the student looses an attempt, or gspack malfunctioning,
+        in which case student does not loose an attempt and is asked to contact their instructor.
+
+        :param exception: Exception that occurred during execution.
+        :return: None
+        """
+        results = {
+            "output": "ERROR: \n",
+            "score": self.max_previous_score,
+            "extra_data": {
+                "success": True,
+                "pretest": False
             }
-            results["output"] += " ERROR: \n"
-            if type(exception) is UserFailure:
-                results["output"] += str(exception) + "\n"
-            else:
-                results["output"] += (f"Autograder failed to process your submission" +
-                                      f" due to an internal error: \n {str(exception)} \n" +
-                                      f"Please contact your instructor for assistance. " +
-                                      f" This attempt does not count towards your" +
-                                      f" total number of attempts, if limited.\n"
-                                      )
-                results["extra_data"]["success"] = False
-
-        elif results is not None:
-            results["output"] = output + (f"Executed successfully." +
-                                          f" Current score: {results['score']:.2f}/{self.max_score:.2f} \n")
-
-            if self.max_previous_score >= self.max_score and not self.test_student:
-                results["output"] = "You already achieved maximum score possible.\n"
-                results["tests"] = []
-
-            if self.attempt_number > self.max_number_of_attempts > 0 and not self.test_student:
-                results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
-                results["tests"] = []
+        }
+        if type(exception) is UserFailure:
+            results["output"] += str(exception) + "\n"
+        else:
+            results["output"] += (f"Autograder failed to process your submission" +
+                                  f" due to an internal error: \n {str(exception)} \n" +
+                                  f"Please contact your instructor for assistance. " +
+                                  f" This attempt does not count towards your" +
+                                  f" total number of attempts, if limited.\n"
+                                  )
+            results["extra_data"]["success"] = False
 
         results["score"] = round(results["score"], 2)
         self.write_down_and_exit(results)

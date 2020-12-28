@@ -34,6 +34,14 @@ from gspack.helpers import determine_platform, all_supported_platforms, all_rubr
 
 @contextmanager
 def timeout(time):
+    """
+    Context manager which kills a function after `time` passes. Meant to provide
+    the timeout functionality on top of what's provided by Gradescope.
+
+    :param time: timeout (in seconds)
+    :return: None if the function executes before `time` passes, otherwise interrupts it with an error.
+    """
+
     # Register a function to raise a TimeoutError on the signal.
     signal.signal(signal.SIGALRM, raise_timeout)
     # Schedule the signal to be sent after ``time``.
@@ -52,15 +60,36 @@ def timeout(time):
 
 
 def raise_timeout(_):
+    """
+    Wrapper function for raising a timeout error. Needed for `signal.signal()`.
+
+    :param _:
+    :return: None
+    """
     raise TimeoutError
 
 
 class Executor:
+    """
+    Executor takes a path to a script file and returns either a list of values
+    for pre-specified variables (MATLAB)
+    or a dictionary with all namespace variables and their values
+    left after the script's execution (Python, Jupyter).
+    """
     def __init__(self,
                  supported_platforms=all_supported_platforms.keys(),
                  timeout_for_execution=1000,
                  matlab_config=None,
                  verbose=False):
+        """
+        Creates an instance of Executor.
+
+        :param supported_platforms: list of supported platforms
+        :param timeout_for_execution: timeout for execution. Set to be super-big by default.
+        :param matlab_config: dictionary with everything `matlab_executor` needs to know,
+                including `variables_to_get`, to execute a matlab file.
+        :param verbose: whether to print logs along the way to the terminal
+        """
         self.supported_platforms = supported_platforms
         if matlab_config is None:
             self.matlab_config = {
@@ -73,6 +102,13 @@ class Executor:
         self.verbose = verbose
 
     def execute(self, file_path: Path, platform=None):
+        """
+        Executes the script file.
+
+        :param file_path: path to the script file
+        :param platform: language (platform) of this file
+        :return: tuple: platform dictionary with values from the script's namespace.
+        """
         if not os.path.exists(file_path):
             raise UserFailure(f"File does not exist: {file_path}")
         if platform is None:
@@ -97,6 +133,12 @@ class Executor:
         return platform, output
 
     def execute_matlab(self, file_path: Path):
+        """
+        Executes a MATLAB file.
+
+        :param file_path: path to the file
+        :return: dictionary with values of variables listed in `self.matlab_config["variables_to_get"]`
+        """
         if "matlab" not in self.supported_platforms:
             raise UserFailure(
                 "MATLAB support is disabled for this assignment, but a MATLAB file is submitted.")
@@ -112,6 +154,12 @@ class Executor:
         return output
 
     def execute_python(self, file_path: Path):
+        """
+        Executes a Python script
+
+        :param file_path: path to the script
+        :return: dictionary with all variables left in the namespace after the script finishes its execution.
+        """
         with open(file_path, 'r') as f:
             code = f.read()
         module_name = file_path.stem
@@ -133,7 +181,13 @@ class Executor:
         return module.__dict__
 
     def execute_jupyter(self, file_path: Path):
-        """import a notebook as a module"""
+        """
+        Executes a Jupyter Notebook, all coding cells top to bottom.
+
+        :param file_path: path to the notebook
+        :return: dictionary with all variables left in the namespace after the the Notebook finishes its execution.
+        """
+
         # load the notebook object
         with io.open(file_path, 'r', encoding='utf-8') as f:
             nb = read(f, 4)

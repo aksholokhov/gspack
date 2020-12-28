@@ -127,7 +127,7 @@ def run_grader(environment: Environment):
     except Exception as e:
         # If, at any point above, something goes wrong,
         # write the result with error details
-        environment.write_results(exception=e)
+        environment.write_exception(exception=e)
         return -1
 
 
