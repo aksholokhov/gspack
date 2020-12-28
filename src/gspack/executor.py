@@ -17,10 +17,8 @@
 
 import io
 import os
-import signal
 import sys
 import types
-from contextlib import contextmanager
 from pathlib import Path
 
 from IPython import get_ipython
@@ -32,43 +30,6 @@ from gspack.helpers import UserFailure, GspackFailure, redirected_output
 from gspack.helpers import determine_platform, all_supported_platforms, all_rubric_variables
 
 
-@contextmanager
-def timeout(time):
-    """
-    Context manager which kills a function after `time` passes. Meant to provide
-    the timeout functionality on top of what's provided by Gradescope.
-
-    :param time: timeout (in seconds)
-    :return: None if the function executes before `time` passes, otherwise interrupts it with an error.
-    """
-
-    # Register a function to raise a TimeoutError on the signal.
-    signal.signal(signal.SIGALRM, raise_timeout)
-    # Schedule the signal to be sent after ``time``.
-    signal.alarm(time)
-
-    try:
-        yield
-    except TimeoutError:
-        raise Exception("Timeout")
-    except Exception as e:
-        raise e
-    finally:
-        # Unregister the signal so it won't be triggered
-        # if the timeout is not reached.
-        signal.signal(signal.SIGALRM, signal.SIG_IGN)
-
-
-def raise_timeout(_):
-    """
-    Wrapper function for raising a timeout error. Needed for `signal.signal()`.
-
-    :param _:
-    :return: None
-    """
-    raise TimeoutError
-
-
 class Executor:
     """
     Executor takes a path to a script file and returns either a list of values
@@ -78,14 +39,12 @@ class Executor:
     """
     def __init__(self,
                  supported_platforms=all_supported_platforms.keys(),
-                 timeout_for_execution=1000,
                  matlab_config=None,
                  verbose=False):
         """
         Creates an instance of Executor.
 
         :param supported_platforms: list of supported platforms
-        :param timeout_for_execution: timeout for execution. Set to be super-big by default.
         :param matlab_config: dictionary with everything `matlab_executor` needs to know,
                 including `variables_to_get`, to execute a matlab file.
         :param verbose: whether to print logs along the way to the terminal
@@ -98,7 +57,6 @@ class Executor:
         else:
             self.matlab_config = matlab_config
         self.log_path = "execution_log_%s.txt"
-        self.timeout = timeout_for_execution
         self.verbose = verbose
 
     def execute(self, file_path: Path, platform=None):
@@ -146,9 +104,8 @@ class Executor:
         # requires being imported in the very first line of the file.
         try:
             from .matlab_executor import execute_matlab as execute_matlab_ext
-            with timeout(self.timeout):
-                output = execute_matlab_ext(file_path,
-                                            matlab_config=self.matlab_config)
+            output = execute_matlab_ext(file_path,
+                                        matlab_config=self.matlab_config)
         except TimeoutError:
             return UserFailure("Code did not finish before timeout.")
         return output
@@ -169,8 +126,7 @@ class Executor:
         with open(self.log_path, 'w') as f:
             with redirected_output(new_stdout=f, new_stderr=f):
                 try:
-                    with timeout(self.timeout):
-                        exec(code, module.__dict__)
+                    exec(code, module.__dict__)
                 except Exception as e:
                     raise UserFailure(f"Exception occurred while executing your code: {str(e)}")
             # in case the code opened plots -- close them
@@ -217,9 +173,8 @@ class Executor:
                         code = shell.input_transformer_manager.transform_cell(cell.source)
                         # run the code in module
                         try:
-                            with timeout(self.timeout):
-                                with redirected_output(new_stdout=f):
-                                    exec(code, module.__dict__)
+                            with redirected_output(new_stdout=f):
+                                exec(code, module.__dict__)
                         except TimeoutError:
                             raise UserFailure("Code did not finish before timeout")
                         except Exception as e:
