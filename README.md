@@ -38,6 +38,8 @@ $ pip install gspack
 
 in your terminal.
 
+For MATLAB Support, follow the instructions which `gspack` prints at the end of its installation.
+
 ## Usage
 
 In order to make your assignment `gspack`-compatible you need to create a brief description of your rubric and put it to
@@ -244,7 +246,10 @@ The number of attempts is unlimited by default.
 
 The **"Test Student"** user is always excused from this limit to allow the instructor to do as many test submissions as
 they need. To use this feature you need to add a student to your roster with the name "Test Student" and the email "
-test_student@gspack.com".
+test_student@gspack.com". In order to make a submission as a "Test Student" 
+you need to go to your assignment, then click “Manage Submissions” on the left panel,
+then hit the “Upload Submission” button on the lower right,
+and there will be an option to choose the name in the pop-up window.
 
 ### 3) Total score and even distribution of points
 
