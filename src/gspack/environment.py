@@ -95,9 +95,11 @@ class Environment:
         # Find how many attempts have already been used
         previous_attempts_counter = 0
         max_previous_score = 0
+
         for submission_metadata in submission_metadata['previous_submissions']:
             results = submission_metadata["results"]
-            if results["extra_data"]["success"] and not results["extra_data"]["pretest"]:
+            extra_data = submission_metadata.get('extra_data', None)
+            if extra_data is not None and extra_data["success"] and not extra_data["pretest"]:
                 previous_attempts_counter += 1
                 max_previous_score = max(max_previous_score, results["score"])
 
