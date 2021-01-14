@@ -177,7 +177,7 @@ class Environment:
         """
         results = {
             "output": "ERROR: \n",
-            "score": self.max_previous_score,
+            "score": 0,
             "extra_data": {
                 "success": True,
                 "pretest": False

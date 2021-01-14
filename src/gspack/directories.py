@@ -23,12 +23,13 @@ TEMPLATES_DIR = Path("templates")
 REQUIREMENTS_FILE = "requirements.txt"
 RUN_AUTOGRADER_FILE = "run_autograder"
 SETUP_FILE = "setup.sh"
+DEBUG_FILE = "gs_debug.sh"
 RUN_TESTS_FILE = "run_tests.py"
 AUTOGRADER_ZIP = "autograder.zip"
 CONFIG_JSON = "config.json"
 RUBRIC_JSON = "rubric.json"
 TEST_SUITE_VALUES_FILE = "test_suite_values.dump"
-AUTOGRADER_ARCHIVE_FILES = [SETUP_FILE, RUN_AUTOGRADER_FILE]
+AUTOGRADER_ARCHIVE_FILES = [SETUP_FILE, RUN_AUTOGRADER_FILE, DEBUG_FILE]
 
 # MATLAB stuff
 MATLAB_INSTALL_FILE = "matlab_setup.sh"
