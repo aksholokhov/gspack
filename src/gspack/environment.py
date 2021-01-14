@@ -124,12 +124,23 @@ class Environment:
         :param keep_maximal_score: whether to keep the maximal previous score as current.
         :return: None
         """
+
         output = (f"Attempt {self.attempt_number}" +
                   (f"/{self.max_number_of_attempts}\n" if (self.max_number_of_attempts > 0
                                                            and not self.test_student
                                                            ) else "/Unlimited\n"))
         # Put the information with the attempt number to the beginning on the output message.
         results["output"] = output + results["output"]
+
+        # Censor results and rests if the maximal score has already been previously achieved
+        # or if the student used all attempts. Test Student is exempted from this.
+        if self.max_previous_score >= self.max_score and not self.test_student:
+            results["output"] = "You already achieved maximum score possible.\n"
+            results["tests"] = []
+
+        if self.attempt_number > self.max_number_of_attempts > 0 and not self.test_student:
+            results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
+            results["tests"] = []
 
         if keep_maximal_score:
             # Let student know if the system kept his previous maximal score
@@ -153,14 +164,6 @@ class Environment:
 
         results["output"] = (f"Executed successfully." +
                              f" Current score: {results['score']:.2f}/{self.max_score:.2f} \n")
-
-        if self.max_previous_score >= self.max_score and not self.test_student:
-            results["output"] = "You already achieved maximum score possible.\n"
-            results["tests"] = []
-
-        if self.attempt_number > self.max_number_of_attempts > 0 and not self.test_student:
-            results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
-            results["tests"] = []
 
         results["score"] = round(results["score"], 2)
         self.write_down_and_exit(results)
