@@ -172,7 +172,7 @@ def get_submission_file_path(submission_dir: Path, main_file_name=None):
                     raise GspackFailure(f"More than one file matches the main file's name" +
                                         f" ({main_file_name}): {main_file} and {file}")
                 main_file = file
-                break
+
         if main_file is None:
             raise UserFailure(f"File with the name {main_file_name} is not found. Check that you named your " +
                               f"main file properly.")
