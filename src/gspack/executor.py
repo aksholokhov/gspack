@@ -56,7 +56,7 @@ class Executor:
             }
         else:
             self.matlab_config = matlab_config
-        self.log_path = "execution_log_%s.txt"
+        self.log_path = "execution_log.txt"
         self.verbose = verbose
 
     def execute(self, file_path: Path, platform=None):
