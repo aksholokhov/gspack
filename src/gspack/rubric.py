@@ -162,6 +162,13 @@ class Rubric:
                             f" {score_from_rubric:.2f} vs {score_per_test:.2f} ({total_score}/{len(test_suite)})."
                             f" You need to define either one global score to assign points evenly," +
                             f" or to define all test's scores manually. When you do both make sure they're consistent.")
+
+            try:
+                _ = float(test['rtol']) if test.get('rtol', None) else None
+                _ = float(test['atol']) if test.get('atol', None) else None
+            except Exception:
+                raise UserFailure(f"{test['test_name']} rtol and atol should be a float number")
+
             actual_total_score += float(test['score'])
             if verbose:
                 print(f"-> {test['test_name']}: OK")

@@ -278,8 +278,8 @@ def get_grades(rubric: Rubric, platform: str, solution: dict):
                 continue
 
             # Check if the answers are close enough
-            rtol = test.get("rtol", None) or 1e-5
-            atol = test.get("atol", None) or 1e-8
+            rtol = float(test.get("rtol", None) or 1e-5)
+            atol = float(test.get("atol", None) or 1e-8)
             if not np.allclose(reduced_answer, reduced_true_answer, rtol=rtol, atol=atol):
                 test_result["output"] = f"Your answer is not within tolerance from the right answer. "
                 test_result["output"] += get_hint(test, "hint_tolerance", platform)
