@@ -167,7 +167,7 @@ class Rubric:
                 _ = float(test['rtol']) if test.get('rtol', None) else None
                 _ = float(test['atol']) if test.get('atol', None) else None
             except Exception:
-                raise UserFailure(f"{test['test_name']} rtol and atol should be a float number")
+                raise UserFailure(f"Tolerances for test {test['test_name']}: rtol and atol should be float numbers")
 
             actual_total_score += float(test['score'])
             if verbose:
