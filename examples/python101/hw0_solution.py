@@ -42,4 +42,4 @@ test_suite = [
 extra_files = ["matrix.csv"]
 supported_platforms = ["jupyter", "python", "matlab"]
 
-matlab_credentials = "~/Storage/repos/gspack_uw_amath_matlab_credentials"
+matlab_credentials = "~/src/gspack_uw_amath_matlab_credentials"

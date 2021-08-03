@@ -45,7 +45,7 @@ def matlab2python(a):
                           )
     if type(a) in matlab_array_types:
         return np.array(a, dtype=float)
-    elif type(a) == int or type(a) == float or type(a) == str or type(a) == bool:
+    elif isinstance(a, (int, float, str, bool)):
         return a
     else:
         raise ValueError(f"Unknown MATLAB type: {type(a)}")

@@ -245,10 +245,10 @@ def get_grades(rubric: Rubric, platform: str, solution: dict):
         # Check whether types match
         if not ((type(reduced_answer) == type(reduced_true_answer)) or (
                 type(reduced_answer) in (float, int) and (type(reduced_true_answer) in (float, int)))):
-            test_result[
-                "output"] = (f"Wrong answer type: the type of your variable {test['variable_name']}" +
-                             f" is {print_reduced_type(reduced_answer)}, " +
-                             f"but it should be a {print_reduced_type(reduced_true_answer)}. ")
+            test_result["output"] = (
+                f"Wrong answer type: the type of your variable {test['variable_name']} " +
+                f"is {print_reduced_type(reduced_answer)}, " +
+                f"but it should be a {print_reduced_type(reduced_true_answer)}.")
             test_result["output"] += get_hint(test, "hint_wrong_type", platform)
 
             continue
@@ -312,7 +312,7 @@ def reduce_type(a):
         return float(a)
     elif isinstance(a, np.ndarray) and a.flatten().shape == (1,):
         return float(a.flatten()[0])
-    elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
+    elif isinstance(a, (np.ndarray, list, set)):
         try:
             res = np.array(a, dtype=float)
         except Exception as e:
@@ -331,7 +331,7 @@ def print_reduced_type(a):
     """
     if isinstance(a, numbers.Number):
         return "number"
-    elif isinstance(a, np.ndarray) or isinstance(a, list) or isinstance(a, set):
+    elif isinstance(a, (np.ndarray, list, set)):
         try:
             res = np.array(a, dtype=float)
         except ValueError:
