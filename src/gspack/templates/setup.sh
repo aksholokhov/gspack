@@ -9,6 +9,7 @@ python3.7 -m pip install -r /autograder/source/requirements.txt
 
 git clone https://github.com/aksholokhov/gspack
 cd gspack || exit
+git branch natalie
 python3.7 setup.py install
 cd .. || exit
 
