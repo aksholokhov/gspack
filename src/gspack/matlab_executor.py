@@ -101,7 +101,7 @@ def execute_matlab(file_path: Path, matlab_config: dict):
             item = get_from_workspace(eng.workspace, name)
             if item is not None:
                 workspace[name] = matlab2python(item)
-        eng.quit()
+        # eng.quit()
         return workspace
     except Exception as e:
         raise GspackFailure(f"Failure while exporting data from MATLAB environment: \n {str(e)}")
