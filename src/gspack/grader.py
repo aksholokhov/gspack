@@ -25,7 +25,7 @@ import click
 import numpy as np
 
 from gspack.__about__ import __version__
-from gspack.directories import TEST_SUITE_VALUES_FILE, GS_RESULTS_JSON
+from gspack.directories import TEST_SUITE_VALUES_FILE, RESULTS_JSON
 from gspack.environment import Environment
 from gspack.executor import Executor
 from gspack.helpers import UserFailure, GspackFailure, determine_platform
@@ -47,6 +47,9 @@ def grade_on_gradescope():
     :return: 0 (zero) if everything goes okay, otherwise -1
     """
     return run_grader(Environment.from_gradescope())
+
+def grade_on_fake_gradescope(gs_home_dir_override):
+    return run_grader(Environment.from_gradescope(gs_home_dir_override=gs_home_dir_override))
 
 
 @click.command(
@@ -72,7 +75,7 @@ def grade_locally_from_terminal(submission_path, rubric_path):
     return grade_locally(submission_path, rubric_path)
 
 
-def grade_locally(submission_path, rubric_path):
+def grade_locally(submission_path, rubric_path, test_values_path=None):
     """
     Grades solution assuming grading outside of a Gradescope server. Meant to be used for
     debugging.
@@ -83,12 +86,14 @@ def grade_locally(submission_path, rubric_path):
     """
     submission_path_absolute = Path(submission_path).absolute()
     rubric_path_absolute = Path(rubric_path).absolute()
+    test_values_path = rubric_path_absolute.parent / TEST_SUITE_VALUES_FILE \
+        if test_values_path is None else Path(test_values_path)
     environment = Environment(
         submission_path=submission_path_absolute,
         submission_dir=submission_path_absolute.parent,
         rubric_path=rubric_path_absolute,
-        test_values_path=rubric_path_absolute.parent / TEST_SUITE_VALUES_FILE,
-        results_path=submission_path_absolute.parent / GS_RESULTS_JSON.name
+        test_values_path=test_values_path,
+        results_path=submission_path_absolute.parent / RESULTS_JSON
     )
     return run_grader(environment)
 
@@ -128,9 +133,12 @@ def run_grader(environment: Environment):
         # If, at any point above, something goes wrong,
         # write the result with error details
         environment.write_exception(exception=e)
+        raise e
         return -1
 
 
+# TODO why do we have a submission_path on the environment if we're just going
+# to ignore it and do this?
 def get_submission_file_path(submission_dir: Path, main_file_name=None):
     """
     Find the student's main submission file and figure out the language by the file's extension.
@@ -300,6 +308,8 @@ def get_grades(rubric: Rubric, platform: str, solution: dict):
 
 def reduce_type(a):
     """
+    TODO: disable set conversion, it doesn't work anyway
+
     Attempts to simplify the type of a: brings all numbers and matrices of one element to Python floats,
     and all lists, sets, and NumPy arrays of any type to Numpy arrays of floats, if possible.
 

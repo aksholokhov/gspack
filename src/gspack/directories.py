@@ -41,11 +41,33 @@ MATLAB_FILES = [MATLAB_INSTALL_FILE, RSA_KEY, KNOWN_HOSTS_FILE, MATLAB_NETWORK_L
 
 # Gradescope file structure
 GS_HOME_DIR = Path("/autograder")
-GS_SOURCE_DIR = GS_HOME_DIR / "source"
-GS_SUBMISSION_DIR = GS_HOME_DIR / "submission"
-GS_RESULTS_DIR = GS_HOME_DIR / "results"
-GS_RESULTS_JSON = GS_RESULTS_DIR / "results.json"
-GS_SUBMISSION_METADATA_JSON = GS_HOME_DIR / "submission_metadata.json"
+
+RESULTS_JSON = "results.json"
+
+class GSDirectoryStructure():
+    def __init__(self, home_dir=GS_HOME_DIR):
+        self.home_dir = home_dir
+
+
+    def source_dir(self):
+        return self.home_dir / "source"
+
+
+    def submission_dir(self):
+        return self.home_dir / "submission"
+
+
+    def results_dir(self):
+        return self.home_dir / "results"
+
+
+    def results_json(self):
+        return self.results_dir() / RESULTS_JSON
+
+
+    def submission_metadata_json(self):
+        return self.home_dir / "submission_metadata.json"
+
 
 # Test and Default students credentials
 TEST_STUDENT_NAME = "Test Student"

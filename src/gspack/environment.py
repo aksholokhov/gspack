@@ -71,13 +71,18 @@ class Environment:
         self.test_values_path = test_values_path
 
     @staticmethod
-    def from_gradescope():
+    def from_gradescope(gs_home_dir_override=None):
         """
         Creates an instance of Environment for Gradescope. Assumes the structure of a Gradescope server.
 
         :return: an instance of Environment configured to work on a Gradescope server.
         """
-        with open(GS_SUBMISSION_METADATA_JSON, 'r') as metadata_file:
+
+        gs_home_dir = GS_HOME_DIR if gs_home_dir_override is None else gs_home_dir_override
+        gs_dirs = GSDirectoryStructure(home_dir=gs_home_dir)
+
+
+        with open(gs_dirs.submission_metadata_json(), 'r') as metadata_file:
             submission_metadata = json.load(metadata_file)
 
         # Get username and email
@@ -108,12 +113,13 @@ class Environment:
             email=email,
             attempt_number=previous_attempts_counter + 1,
             max_previous_score=max_previous_score,
-            submission_dir=GS_SUBMISSION_DIR,
-            results_path=GS_RESULTS_JSON,
-            rubric_path=GS_SOURCE_DIR / RUBRIC_JSON,
-            test_values_path=GS_SOURCE_DIR / TEST_SUITE_VALUES_FILE
+            submission_dir=gs_dirs.submission_dir(),
+            results_path=gs_dirs.results_json(),
+            rubric_path = gs_dirs.source_dir() / RUBRIC_JSON,
+            test_values_path=gs_dirs.source_dir() / TEST_SUITE_VALUES_FILE
         )
         return environment
+
 
     def write_down_and_exit(self, results, keep_maximal_score=True):
         """
