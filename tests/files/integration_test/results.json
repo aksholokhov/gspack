@@ -1,0 +1,8 @@
+{
+    "output": "Attempt 1/Unlimited\nERROR: \nAutograder failed to process your submission due to an internal error: \n [Errno 2] No such file or directory: '/Users/jack/src/gspack/tests/files/integration_test/test_suite_values.dump' \nPlease contact your instructor for assistance.  This attempt does not count towards your total number of attempts, if limited.\n",
+    "score": 0,
+    "extra_data": {
+        "success": false,
+        "pretest": false
+    }
+}
