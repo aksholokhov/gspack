@@ -5,3 +5,4 @@ dist
 
 *.zip
 *.egg-info*
+/virtualenv/
