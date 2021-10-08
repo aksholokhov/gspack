@@ -10,7 +10,7 @@ from gspack.environment import Environment
 from gspack.packager import create_autograder
 from gspack.grader import grade_on_fake_gradescope
 
-def test_gspack():
+def do_test_gspack(submission_file):
     '''
     Tests packaging an autograder and using it to grade a python submission, end to end.
     '''
@@ -46,12 +46,21 @@ def test_gspack():
     os.mkdir(grading_dir / "results")
     os.mkdir(grading_dir / "submission")
 
-    shutil.copy(test_file_dir / "submission.py", grading_dir / "submission")
+    shutil.copy(test_file_dir / submission_file, grading_dir / "submission")
 
     grade_on_fake_gradescope(gs_home_dir_override=grading_dir)
 
     with open(grading_dir / "results/results.json") as results_json:
         results = json.load(results_json)
-
+        print(results)
         assert results['score'] == 2
 
+    os.chdir(rootdir)
+
+
+def test_gspack_python():
+    do_test_gspack("submission.py")
+
+
+def test_gspack_matlab():
+    do_test_gspack("submission.m")

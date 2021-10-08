@@ -28,7 +28,8 @@
   ],
   "supported_platforms": [
     "jupyter",
-    "python"
+    "python",
+    "matlab"
   ],
   "matlab_credentials": "~/src/gspack_uw_amath_matlab_credentials"
 }
