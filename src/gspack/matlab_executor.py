@@ -43,8 +43,13 @@ def matlab2python(a):
                           matlab.uint32,
                           matlab.uint64
                           )
+    if type(a) == complex:
+        return np.array(a, dtype=complex)
     if type(a) in matlab_array_types:
-        return np.array(a, dtype=float)
+        if a._is_complex:
+            return np.array(a, dtype=complex)
+        else:
+            return np.array(a, dtype=float)
     elif type(a) == int or type(a) == float or type(a) == str or type(a) == bool:
         return a
     else:
