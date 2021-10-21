@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
+set -ex
+
 # Install python
 apt-get install -y python python3 python3.7 python3-pip python3-dev jq
+# Upgrade pip
+python3.7 -m pip install -U --force-reinstall pip
 # Install gspack dependencies
 python3.7 -m pip install subprocess32 numpy scipy matplotlib
 # Install solution script dependencies
