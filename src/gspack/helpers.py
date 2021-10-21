@@ -64,7 +64,7 @@ def generate_requirements(path, output_path):
     :param output_path: Path where to save the requirements file
     :return:
     """
-    process = subprocess.Popen(["pipreqs", "--savepath", f"{output_path}", f"{path}"], stdout=subprocess.PIPE,
+    process = subprocess.Popen(["pipreqs", "--no-pin", "--savepath", f"{output_path}", f"{path}"], stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT)
     return process.communicate()
 
