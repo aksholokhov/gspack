@@ -26,7 +26,7 @@ __long_description__ = ("This package is designed to simplify setting" +
                         " See README.md for details and examples.")
 __uri__ = "https://github.com/aksholokhov/gspack"
 
-__version__ = "0.2.8"
+__version__ = "0.2.9"
 
 __author__ = "Aleksei Sholokhov"
 __email__ = "aksh@uw.edu"
