@@ -9,7 +9,9 @@ python3.7 -m pip install -U --force-reinstall pip
 # Install gspack dependencies
 python3.7 -m pip install subprocess32 numpy scipy matplotlib
 # Install solution script dependencies
-python3.7 -m pip install -r /autograder/source/requirements.txt
+if [[ -f "/autograder/source/requirements.txt" ]]; then
+    python3.7 -m pip install -r /autograder/source/requirements.txt
+fi
 
 git clone https://github.com/aksholokhov/gspack
 cd gspack || exit
