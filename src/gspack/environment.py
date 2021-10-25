@@ -102,6 +102,11 @@ class Environment:
         max_previous_score = 0
 
         for previous_submission in submission_metadata['previous_submissions']:
+            if previous_submission["results"] is None:
+                # it happens sometimes when the autograder failed to
+                # produce any output at all during one of the previous submissions
+                # due to a bug in the autograder itself.
+                continue
             results = previous_submission["results"]
             extra_data = results.get('extra_data', None)
             if extra_data is not None and extra_data["success"] and not extra_data["pretest"]:
