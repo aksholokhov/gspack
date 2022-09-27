@@ -147,6 +147,7 @@ class Environment:
         if self.attempt_number > self.max_number_of_attempts > 0 and not self.test_student:
             results["output"] = f"You've already used all {self.max_number_of_attempts} attempts.\n"
             results["tests"] = []
+            results["score"] = self.max_previous_score
 
         if keep_maximal_score:
             # Let student know if the system kept his previous maximal score
