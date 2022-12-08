@@ -3,19 +3,19 @@
 set -ex
 
 # Install python
-apt-get install -y python python3 python3.7 python3-pip python3-dev jq
+apt-get install -y python3 python3.10 python3-pip python3-dev jq
 # Upgrade pip
-python3.7 -m pip install -U --force-reinstall pip
+python3.10 -m pip install -U --force-reinstall pip
 # Install gspack dependencies
-python3.7 -m pip install subprocess32 numpy scipy matplotlib
+python3.10 -m pip install subprocess32 numpy scipy matplotlib
 # Install solution script dependencies
 if [[ -f "/autograder/source/requirements.txt" ]]; then
-    python3.7 -m pip install -r /autograder/source/requirements.txt
+    python3.10 -m pip install -r /autograder/source/requirements.txt
 fi
 
 git clone https://github.com/aksholokhov/gspack
 cd gspack || exit
-python3.7 setup.py install
+python3.10 setup.py install
 cd .. || exit
 
 matlab=$(jq '.matlab_support' /autograder/source/config.json)
@@ -29,7 +29,7 @@ fi
 jupyter=$(jq '.jupyter_support' /autograder/source/config.json)
 if [ $jupyter = 1 ]; then
     echo "Adding Jupyter components"
-    python3.7 -m pip install ipython nbformat
+    python3.10 -m pip install ipython nbformat
 fi
 
 echo "Main setup.sh completed"
