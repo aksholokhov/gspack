@@ -2,7 +2,7 @@ pipreqs
 subprocess32
 click
 numpy
-ipython==7.*
+ipython==8.12.3
 nbformat
 matplotlib
 pathlib
